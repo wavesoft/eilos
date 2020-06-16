@@ -1,4 +1,4 @@
-# εἵλως (eilos)
+# 🏋️‍♂️ εἵλως (eilos)
 
 > The versatile, opinionated build toolset for javascript applications, with pluggable opinions
 

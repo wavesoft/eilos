@@ -1,37 +1,41 @@
 #! /usr/bin/env node
 /* eslint-disable no-console */
 
+const cli = require('yargs')
+const logger = require('../src/logger')
 const { getDefaultProjectConfig } = require('../src/config')
 const { invokeAction } = require('../src/actions')
 
-// const cli = require('yargs')
-//
-// cli
-//   .scriptName('poseidon')
-//   .env('POSEIDON')
-//   .usage('Usage: $0 <command> [options]')
-//   .example('$0 build', 'Runs the build command to bundle JS code for the browser.')
-//   .example('npx $0 build', 'Can be used with `npx` to use a local version')
-//   .example('$0 test -t webworker -- --browsers Firefox', 'If the command supports `--` can be used to forward options to the underlying tool.')
-//   .example('npm test -- -- --browsers Firefox', 'If `npm test` translates to `aegir test -t browser` and you want to forward options you need to use `-- --` instead.')
-//   .epilog('Use `$0 <command> --help` to learn more about each command.')
-//   .commandDir('cmds')
-//   .demandCommand(1, 'You need at least one command.')
-//   .option('D', {
-//     desc: 'Show debug output.',
-//     type: 'boolean',
-//     default: false,
-//     alias: 'debug'
-//   })
-//   .help()
-//   .alias('h', 'help')
-//   .alias('v', 'version')
-//   .group(['help', 'version', 'debug'], 'Global Options:')
-//   .wrap(cli.terminalWidth())
-//   .parserConfiguration({ 'populate--': true })
-//   .recommendCommands()
-//   .completion()
-//   .strictCommands()
-
 const config = getDefaultProjectConfig()
-invokeAction(config, 'build')
+
+// Expand the actions found in the profile
+Object.keys(config.actions).reduce((cli, actionName) => {
+  return cli.command({
+    command: `${actionName} [options]`,
+    desc: `Invoke the ${actionName} action`,
+    handler: (argv) => {
+      if (argv.debug) {
+        logger.level = 'debug'
+      }
+      console.log(argv._)
+      config.context.updateConfig({ argv: argv._.slice(1) })
+      invokeAction(config, actionName)
+    }
+  })
+}, cli
+  .scriptName('eilos')
+  .env('EILOS')
+  .example('$0 build', 'Runs the build command to bundle JS code for the browser.')
+  .usage('Usage: $0 <command> [options]')
+  .demandCommand(1, 'You must specify the command to run.')
+  .alias('h', 'help')
+  .option('D', {
+    desc: 'Show debug output.',
+    type: 'boolean',
+    default: false,
+    alias: 'debug'
+  })
+  .wrap(cli.terminalWidth())
+  .recommendCommands()
+  .completion()
+).argv

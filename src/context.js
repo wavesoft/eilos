@@ -37,10 +37,11 @@ class Context {
   }
 
   getConfig (name, defaults = null) {
-    if (typeof this._config[name] === 'object') {
-      return merge({}, defaults || {}, this._config[name] || {})
+    const value = this._config[name]
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      return merge({}, defaults || {}, value || {})
     } else {
-      return this._config[name] || defaults
+      return value || defaults
     }
   }
 

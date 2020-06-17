@@ -14,12 +14,20 @@ Object.keys(config.actions).reduce((cli, actionName) => {
     command: `${actionName} [options]`,
     desc: `Invoke the ${actionName} action`,
     handler: (argv) => {
+      // Handle flags
       if (argv.debug) {
         logger.level = 'debug'
       }
-      console.log(argv._)
+
+      // Pass down arguments to the context
       config.context.updateConfig({ argv: argv._.slice(1) })
-      invokeAction(config, actionName)
+
+      // Call-out to the profile action implementation
+      invokeAction(config, actionName).then(_ => {
+        logger.info(`🏋️‍♀️ ${actionName} step completed`)
+      }).catch(err => {
+        logger.error(`🏋️‍♀️ ${actionName} step failed: ${error}`)
+      })
     }
   })
 }, cli

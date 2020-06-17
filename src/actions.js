@@ -10,6 +10,12 @@ function removeBuildDir (ctx) {
   rimraf.sync(builDir)
 }
 
+function removeConfigDir (ctx) {
+  const configDir = ctx.getDirectory('dist.config')
+  actions.debug(`Removing ${configDir}`)
+  rimraf.sync(configDir)
+}
+
 function ensureBuildDir (ctx) {
   const builDir = ctx.getDirectory('dist')
   if (!fs.existsSync(builDir)) {
@@ -38,7 +44,7 @@ exports.invokeAction = function (project, actionName) {
   const ctx = project.context
   const action = project.actions[actionName]
   if (action == null) {
-    throw new TypeError('Action ' + actionName + ' was not found in project config')
+    return Promise.reject(new TypeError('Action ' + actionName + ' was not found in project config'))
   }
 
   actions.info(`Performing ${actionName}`)
@@ -47,17 +53,25 @@ exports.invokeAction = function (project, actionName) {
   const postDefault = defaultPostActions[actionName]
   const postAction = project.actions[actionName].postRun
   const runAction = project.actions[actionName].run
+  const chain = []
 
   // Run early pre-action function
-  if (preDefault) preDefault(ctx)
+  if (preDefault) chain.push(e => Promise.resolve(preDefault(ctx)))
 
   // Ensure the build dir is correclty populated
-  ensureBuildDir(ctx)
-  createAllActionFiles(ctx, project.actions[actionName])
+  chain.push(e => Promise.resolve(ensureBuildDir(ctx)))
+  chain.push(e => Promise.resolve(createAllActionFiles(ctx, project.actions[actionName])))
 
   // Start the action sequencing
-  if (preAction) preAction(ctx)
-  if (runAction) runAction(ctx)
-  if (postAction) postAction(ctx)
-  if (postDefault) postDefault(ctx)
+  if (preAction) chain.push(e => Promise.resolve(preAction(ctx)))
+  if (runAction) chain.push(e => Promise.resolve(runAction(ctx)))
+  if (postAction) chain.push(e => Promise.resolve(postAction(ctx)))
+  if (postDefault) chain.push(e => Promise.resolve(postDefault(ctx)))
+
+  // We don't need the config dir after we are done
+  chain.push(e => Promise.resolve(removeConfigDir(ctx)))
+
+  return chain.reduce((promise, chain) => {
+    return promise.then(chain)
+  }, Promise.resolve(null))
 }

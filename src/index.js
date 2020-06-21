@@ -1,9 +1,9 @@
-const { getDefaultProjectConfig } = require('./config')
-const { invokeAction } = require('./actions')
-const { invokeFileFunction } = require('./files')
+const { getDefaultProjectConfig } = require("./config");
+const { invokeAction } = require("./actions");
+const { invokeFileFunction } = require("./files");
 
 module.exports = {
-  getDefaultProjectConfig
+  getDefaultProjectConfig,
   invokeAction,
   invokeFileFunction,
-}
+};

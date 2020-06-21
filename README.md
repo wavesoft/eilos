@@ -52,8 +52,13 @@ You can override these defaults by providing a `.eilos.js` configuration file:
 
 ```js
 module.exports = {
-  // Modify the entry point
+  // Define the entry point
   entry: "src/index.js",
+  // Define thestatic files
+  static: "static",
+
+  // Manually override specific configuration options for the packages used
+  // by the profile (refer to the profile documentation)
 
   webpack: {
     // Webbpack options
@@ -63,6 +68,9 @@ module.exports = {
   },
   jest: {
     // Jest options
+  },
+  prettier: {
+    // Prettier options
   }
 }
 ```

@@ -26,7 +26,7 @@ Object.keys(config.actions).reduce((cli, actionName) => {
       invokeAction(config, actionName).then(_ => {
         logger.info(`🏋️‍♀️ ${actionName} step completed`)
       }).catch(err => {
-        logger.error(`🏋️‍♀️ ${actionName} step failed: ${error}`)
+        logger.error(`🏋️‍♀️ ${actionName} step failed: ${err}`)
       })
     }
   })

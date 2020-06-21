@@ -2,7 +2,7 @@
 
 const findUp = require('findup-sync')
 const path = require('path')
-const merge = require('merge-options')
+const merge = require('deepmerge')
 
 const { expandParametricConfig } = require('./env')
 const { ProjectConfig } = require('./struct/config')
@@ -13,6 +13,8 @@ const PATH_USER = '.eilos.js'
 const PATH_BUILD = 'build'
 const PATH_NODE_MODULES = 'node_modules'
 const PRESET_PREFIX = 'eilos-preset-'
+
+const overwriteMerge = (destinationArray, sourceArray, options) => [].concat(destinationArray, sourceArray)
 
 /**
  * Gets the full path to the elios node module
@@ -195,12 +197,11 @@ exports.getProjectConfig = function (context) {
   context.updateConfig(expandedUserConfig)
 
   // Collect actions configuration
-  const actions = merge(
-    {},
+  const actions = merge.all([
     presetConfig._actions || {},
     userPkgConfig._actions || {},
     expandedUserConfig._actions || {}
-  )
+  ], { arrayMerge: overwriteMerge })
 
   return new ProjectConfig(actions, context)
 }

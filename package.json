@@ -2,19 +2,26 @@
   "name": "eilos",
   "version": "0.1.0",
   "description": "Web App Build Abstraction",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
     "eilos": "./bin/eilos.js"
   },
-  "author": "Ioannis Charalampidis",
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "Ioannis Charalampidis <ioannis@charalampidis.me>",
+  "tags": [
+    "build",
+    "lint"
+  ],
   "license": "MIT",
   "dependencies": {
+    "deepmerge": "^4.2.2",
     "execa": "^4.0.2",
     "findup-sync": "^4.0.0",
-    "merge-options": "^2.0.0",
     "rimraf": "^3.0.2",
     "winston": "^3.2.1",
     "yargs": "^15.3.1"

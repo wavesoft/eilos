@@ -1,32 +1,40 @@
+'use strict'
+
+const util = require('util')
+const rimraf = util.promisify(require('rimraf'))
 const fs = require('fs')
-const rimraf = require('rimraf')
+const fsExists = util.promisify(fs.exists)
+const fsMkdir = util.promisify(fs.mkdir)
 
 const actions = require('./logger').child({ component: 'files' })
 const { createAllActionFiles } = require('./files')
 
 function removeBuildDir (ctx) {
-  const builDir = ctx.getDirectory('dist')
-  actions.debug(`Removing ${builDir}`)
-  rimraf.sync(builDir)
+  const buildDir = ctx.getDirectory('dist')
+  actions.debug(`Removing ${buildDir}`)
+  return rimraf(buildDir)
 }
 
 function removeConfigDir (ctx) {
   const configDir = ctx.getDirectory('dist.config')
   actions.debug(`Removing ${configDir}`)
-  rimraf.sync(configDir)
+  return rimraf(configDir)
 }
 
 function ensureBuildDir (ctx) {
-  const builDir = ctx.getDirectory('dist')
-  if (!fs.existsSync(builDir)) {
-    actions.debug(`Creating ${builDir}`)
-    fs.mkdirSync(builDir, { recursive: true })
-  }
+  const buildDir = ctx.getDirectory('dist')
+  return fsExists(buildDir).then(ok => {
+    if (!ok) {
+      actions.debug(`Creating ${buildDir}`)
+      return fsMkdir(buildDir, { recursive: true })
+    }
+    return true
+  })
 }
 
 const defaultPreActions = {
   build: (ctx) => {
-    removeBuildDir(ctx)
+    return removeBuildDir(ctx)
   }
 }
 
@@ -39,6 +47,7 @@ const defaultPostActions = {
  *
  * @param {ProjectConfig} project - The project configuration
  * @param {string} actionName - The name of the action to invoke
+ * @returns {Promise} - Returns a promise that will be resolved when the steps are completed
  */
 exports.invokeAction = function (project, actionName) {
   const ctx = project.context
@@ -60,7 +69,7 @@ exports.invokeAction = function (project, actionName) {
 
   // Ensure the build dir is correclty populated
   chain.push(e => Promise.resolve(ensureBuildDir(ctx)))
-  chain.push(e => Promise.resolve(createAllActionFiles(ctx, project.actions[actionName])))
+  chain.push(e => createAllActionFiles(ctx, project.actions[actionName]))
 
   // Start the action sequencing
   if (preAction) chain.push(e => Promise.resolve(preAction(ctx)))

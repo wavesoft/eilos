@@ -1,13 +1,15 @@
 'use strict'
 
-const merge = require('merge-options')
+const merge = require('deepmerge')
 const path = require('path')
 const execa = require('execa')
+
+const overwriteMerge = (destinationArray, sourceArray, options) => [].concat(destinationArray, sourceArray)
 
 class Context {
   constructor () {
     this.util = {
-      merge
+      merge: (...args) => merge.all(args, { arrayMerge: overwriteMerge })
     }
     this._env = {}
     this._dir = {}
@@ -33,13 +35,13 @@ class Context {
   }
 
   updateConfig (obj) {
-    this._config = merge(this._config, obj)
+    this._config = merge(this._config, obj, { arrayMerge: overwriteMerge })
   }
 
   getConfig (name, defaults = null) {
     const value = this._config[name]
     if (typeof value === 'object' && !Array.isArray(value)) {
-      return merge({}, defaults || {}, value || {})
+      return Object.assign({}, defaults, value)
     } else {
       return value || defaults
     }
@@ -84,6 +86,7 @@ function defaultContextForProject (projectPath) {
   )
   ctx._dir = {
     project: projectPath,
+    'project.src': path.join(projectPath, 'src'),
     dist: path.join(projectPath, 'dist'),
     static: path.join(projectPath, 'static'),
     'dist.config': path.join(projectPath, 'dist', '.config')

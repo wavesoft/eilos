@@ -1,6 +1,6 @@
 {
   "name": "eilos",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Web App Build Abstraction",
   "main": "src/index.js",
   "scripts": {

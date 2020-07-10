@@ -27,6 +27,7 @@ Object.keys(config.actions).reduce((cli, actionName) => {
         logger.info(`🏋️‍♀️ ${actionName} step completed`)
       }).catch(err => {
         logger.error(`🏋️‍♀️ ${actionName} step failed: ${err}`)
+        process.exit(1);
       })
     }
   })

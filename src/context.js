@@ -3,11 +3,13 @@
 const merge = require('deepmerge')
 const path = require('path')
 const execa = require('execa')
+const logger = require('./logger').child({ component: 'conntext' })
 
-const overwriteMerge = (destinationArray, sourceArray, options) => [].concat(destinationArray, sourceArray)
+const overwriteMerge = (destinationArray, sourceArray, options) =>
+  [].concat(destinationArray, sourceArray)
 
 class Context {
-  constructor () {
+  constructor() {
     this.util = {
       merge: (...args) => merge.all(args, { arrayMerge: overwriteMerge })
     }
@@ -17,28 +19,28 @@ class Context {
     this._config_files = {}
   }
 
-  isDevelop () {
-    this.getNode() === 'development'
+  isDevelop() {
+    return this.getMode() === 'development'
   }
 
-  isProduction () {
-    this.getNode() === 'production'
+  isProduction() {
+    return this.getMode() === 'production'
   }
 
-  getMode () {
+  getMode() {
     return this._env.NODE_ENV || 'development'
   }
 
-  setDirectory (name, path) {
+  setDirectory(name, path) {
     this._dir[name] = path
     return this
   }
 
-  updateConfig (obj) {
+  updateConfig(obj) {
     this._config = merge(this._config, obj, { arrayMerge: overwriteMerge })
   }
 
-  getConfig (name, defaults = null) {
+  getConfig(name, defaults = null) {
     const value = this._config[name]
     if (typeof value === 'object' && !Array.isArray(value)) {
       return Object.assign({}, defaults, value)
@@ -47,35 +49,43 @@ class Context {
     }
   }
 
-  getConfigFilePath (name) {
+  getConfigFilePath(name) {
     if (this._config_files[name] == null) {
       this._config_files[name] = null
     }
     return path.join(this.getDirectory('dist.config'), name)
   }
 
-  addConfigFile (name, contents) {
+  addConfigFile(name, contents) {
     this._config_files[name] = contents
   }
 
-  getDirectory (name) {
+  getDirectory(name) {
     if (this._dir[name] == null) {
       throw new Error(`Directory "${name}" was not defined`)
     }
     return this._dir[name]
   }
 
-  exec (binary, args = [], options = {}) {
-    return execa(binary, args, merge({
-      localDir: this.getDirectory('project'),
-      preferLocal: true,
-      stdio: 'inherit',
-      env: this._env
-    }, options))
+  exec(binary, args = [], options = {}) {
+    logger.debug(`Invoking ${binary} ${args.join(' ')}`)
+    return execa(
+      binary,
+      args,
+      merge(
+        {
+          localDir: this.getDirectory('project'),
+          preferLocal: true,
+          stdio: 'inherit',
+          env: this._env
+        },
+        options
+      )
+    )
   }
 }
 
-function defaultContextForProject (projectPath) {
+function defaultContextForProject(projectPath) {
   const ctx = new Context()
   ctx._config = {}
   ctx._env = Object.assign(
@@ -94,7 +104,7 @@ function defaultContextForProject (projectPath) {
   return ctx
 }
 
-function getProjectContext () {
+function getProjectContext() {
   const context = defaultContextForProject(getBasePath())
   const config = getProjectConfig(context)
 }

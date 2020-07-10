@@ -206,6 +206,11 @@ exports.getProjectConfig = function (context) {
   )
   context.updateConfig(expandedUserConfig)
 
+  // Also include other useful configuration, such as package.json
+  context.updateConfig({
+    package: packageConfig
+  })
+
   // Collect actions configuration
   const actions = merge.all(
     [

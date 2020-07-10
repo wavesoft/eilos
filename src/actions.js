@@ -6,18 +6,18 @@ const fs = require('fs')
 const fsExists = util.promisify(fs.exists)
 const fsMkdir = util.promisify(fs.mkdir)
 
-const actions = require('./logger').child({ component: 'files' })
+const logger = require('./logger').child({ component: 'actions' })
 const { createAllActionFiles } = require('./files')
 
 function removeBuildDir (ctx) {
   const buildDir = ctx.getDirectory('dist')
-  actions.debug(`Removing ${buildDir}`)
+  logger.debug(`Removing ${buildDir}`)
   return rimraf(buildDir)
 }
 
 function removeConfigDir (ctx) {
   const configDir = ctx.getDirectory('dist.config')
-  actions.debug(`Removing ${configDir}`)
+  logger.debug(`Removing ${configDir}`)
   return rimraf(configDir)
 }
 
@@ -25,7 +25,7 @@ function ensureBuildDir (ctx) {
   const buildDir = ctx.getDirectory('dist')
   return fsExists(buildDir).then(ok => {
     if (!ok) {
-      actions.debug(`Creating ${buildDir}`)
+      logger.debug(`Creating ${buildDir}`)
       return fsMkdir(buildDir, { recursive: true })
     }
     return true
@@ -56,7 +56,7 @@ exports.invokeAction = function (project, actionName) {
     return Promise.reject(new TypeError('Action ' + actionName + ' was not found in project config'))
   }
 
-  actions.info(`Performing ${actionName}`)
+  logger.info(`Performing ${actionName}`)
   const preDefault = defaultPreActions[actionName]
   const preAction = project.actions[actionName].preRun
   const postDefault = defaultPostActions[actionName]

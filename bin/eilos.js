@@ -17,6 +17,7 @@ Object.keys(config.actions).reduce((cli, actionName) => {
       // Handle flags
       if (argv.debug) {
         logger.level = 'debug'
+        config.context.updateConfig({debug: true})
       }
 
       // Pass down arguments to the context

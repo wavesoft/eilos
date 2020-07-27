@@ -104,24 +104,32 @@ exports.getUserConfig = () => {
  * Load the package configuration
  */
 exports.resolvePackagePath = (name, searchIn = null) => {
+  return exports.resolveFilePath(path.join(PATH_NODE_MODULES, name), searchIn)
+}
+
+/**
+ * Find a file in project directory or in one of the parent directories
+ */
+exports.resolveFilePath = (name, searchIn = null) => {
   let currentPath = searchIn || exports.getBasePath()
 
   while (currentPath && currentPath !== '/') {
-    const modulePath = path.join(currentPath, PATH_NODE_MODULES, name)
+    const filePath = path.join(currentPath, name)
     try {
-      fs.statSync(modulePath)
-      return modulePath
+      fs.statSync(filePath)
+      return filePath
     } catch (err) {
-      // If the file was not found, try it's parent
+      // If file wasn't found try the parent
       if (err.errno === -2) {
         currentPath = path.dirname(currentPath)
-      } else {
+      }
+      else {
         throw err
       }
     }
   }
 
-  throw 'Could not find package: ' + name
+  throw 'Could not resolve file path: ' + name
 }
 
 /**

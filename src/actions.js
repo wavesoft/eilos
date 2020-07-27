@@ -77,8 +77,10 @@ exports.invokeAction = function (project, actionName) {
   if (postAction) chain.push(e => Promise.resolve(postAction(ctx)))
   if (postDefault) chain.push(e => Promise.resolve(postDefault(ctx)))
 
-  // We don't need the config dir after we are done
-  chain.push(e => Promise.resolve(removeConfigDir(ctx)))
+  // We don't need the config dir after we are done unless we are running in debug mode
+  if (!ctx.getConfig('debug', false)) {
+    chain.push(e => Promise.resolve(removeConfigDir(ctx)))
+  }
 
   return chain.reduce((promise, chain) => {
     return promise.then(chain)

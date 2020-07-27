@@ -4,6 +4,7 @@ const merge = require('deepmerge')
 const path = require('path')
 const execa = require('execa')
 const logger = require('./logger').child({ component: 'conntext' })
+const config = require('./config')
 
 const overwriteMerge = (destinationArray, sourceArray, options) =>
   [].concat(destinationArray, sourceArray)
@@ -17,6 +18,7 @@ class Context {
     this._dir = {}
     this._config = {}
     this._config_files = {}
+    this.logger = logger
   }
 
   isDevelop() {
@@ -65,6 +67,10 @@ class Context {
       throw new Error(`Directory "${name}" was not defined`)
     }
     return this._dir[name]
+  }
+
+  resolveFilePath(name, searchIn = null) {
+    return config.resolveFilePath(name, searchIn)
   }
 
   exec(binary, args = [], options = {}) {

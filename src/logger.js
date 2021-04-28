@@ -1,23 +1,24 @@
-const winston = require('winston')
+const winston = require("winston");
 
 const logger = winston.createLogger({
-  level: 'info',
+  level: "info",
   format: winston.format.combine(
     winston.format.colorize(),
     winston.format.timestamp(),
     winston.format.printf((info) => {
-      const {
-        timestamp, level, message, ...args
-      } = info
+      const { timestamp, level, message, ...args } = info;
 
-      const ts = timestamp.slice(0, 19).replace('T', ' ')
-      return `${ts} [${level}]: ${message}`
+      const ts = timestamp.slice(0, 19).replace("T", " ");
+      return `${ts} [${level}]: ${message}`;
     })
   ),
   transports: [
     new winston.transports.Console(),
-    new winston.transports.File({ filename: 'eilos-error.log', level: 'error' })
-  ]
-})
+    new winston.transports.File({
+      filename: "eilos-error.log",
+      level: "error",
+    }),
+  ],
+});
 
-module.exports = logger
+module.exports = logger;

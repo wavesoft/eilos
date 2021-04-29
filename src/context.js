@@ -73,6 +73,10 @@ class Context {
     return config.resolveFilePath(name, searchIn);
   }
 
+  resolvePackagePath(name, searchIn = null) {
+    return config.resolvePackagePath(name, searchIn);
+  }
+
   exec(binary, args = [], options = {}) {
     logger.debug(`Invoking ${binary} ${args.join(" ")}`);
     return execa(

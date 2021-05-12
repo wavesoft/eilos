@@ -44,7 +44,7 @@ class Context {
 
   getConfig(name, defaults = null) {
     const value = this._config[name];
-    if (typeof value === "object" && !Array.isArray(value)) {
+    if (typeof value === "object" && value && !Array.isArray(value)) {
       return Object.assign({}, defaults, value);
     } else {
       return value || defaults;
@@ -75,6 +75,12 @@ class Context {
 
   resolvePackagePath(name, searchIn = null) {
     return config.resolvePackagePath(name, searchIn);
+  }
+
+  resolveProjectPackage(name) {
+    return require.resolve(name, {
+      paths: [path.join(this.getDirectory("project"), "node_modules")],
+    });
   }
 
   exec(binary, args = [], options = {}) {

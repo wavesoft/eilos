@@ -10,6 +10,8 @@
 function expandFunction(obj, context, keyFilter) {
   if (Array.isArray(obj)) {
     return obj.map((v) => expandFunction(v, context, keyFilter));
+  } else if (obj === null) {
+    return null;
   } else if (typeof obj === "object" && obj.constructor === Object) {
     const keys = Object.keys(obj);
     if (keys.length === 1 && keys[0] === "@render") {

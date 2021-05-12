@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const findUp = require("findup-sync");
 const merge = require("deepmerge");
+const logger = require("./logger").child({ component: "config" });
 
 const { expandParametricConfig } = require("./env");
 const { ProjectConfig } = require("./struct/config");
@@ -94,8 +95,19 @@ exports.getUserConfig = () => {
       return {};
     }
     conf = require(path);
+
+    const confType = typeof conf;
+    if (typeof conf !== "function") {
+      logger.error(
+        "Invalid eilos configuration: Expecting a JS object, received " +
+          confType
+      );
+    }
   } catch (err) {
-    console.error(err); // eslint-disable-line no-console
+    logger.error(
+      "Could not process eilos configuration: " +
+        (err.message || err.toString())
+    );
   }
   return conf;
 };
@@ -104,14 +116,7 @@ exports.getUserConfig = () => {
  * Load the package configuration
  */
 exports.resolvePackagePath = (name, searchIn = null) => {
-  try {
-    return require.resolve(name);
-  } catch (e) {
-    return exports.resolveFilePath(
-      path.join(PATH_NODE_MODULES, name),
-      searchIn
-    );
-  }
+  return exports.resolveFilePath(path.join(PATH_NODE_MODULES, name), searchIn);
 };
 
 /**

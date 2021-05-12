@@ -97,7 +97,7 @@ exports.getUserConfig = () => {
     conf = require(path);
 
     const confType = typeof conf;
-    if (typeof conf !== "function") {
+    if (typeof conf !== "object") {
       logger.error(
         "Invalid eilos configuration: Expecting a JS object, received " +
           confType

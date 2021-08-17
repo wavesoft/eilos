@@ -1,3 +1,2 @@
-export { getDefaultProjectConfig } from "./config";
-export { invokeAction } from "./actions";
+export { cli } from "./cli";
 export { invokeFileFunction } from "./files";

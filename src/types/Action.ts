@@ -1,20 +1,25 @@
 import type { ConfigFile } from "./ConfigFile";
 import type { RuntimeContext } from "../struct/RuntimeContext";
 
-export interface ActionPositionalArgument {
+export interface ActionArgumentBase {
   name: string;
-  required?: boolean;
+  description?: string;
 }
 
-export interface ActionFlagArgument {
-  name: string;
-  short?: string;
+export interface ActionPositionalArgument extends ActionArgumentBase {
+  required?: boolean;
+  type?: "string" | "number" | "boolean";
 }
 
-export interface ActionNamedArgument {
-  name: string;
-  short?: string;
+export interface ActionNamedArgument extends ActionArgumentBase {
   required?: boolean;
+  short?: string;
+  type?: "string" | "number" | "boolean";
+  defaultValue?: any;
+}
+
+export interface ActionFlagArgument extends ActionArgumentBase {
+  short?: string;
 }
 
 export type ActionArgument =

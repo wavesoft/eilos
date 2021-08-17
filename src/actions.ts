@@ -49,7 +49,11 @@ const defaultPostActions = {};
  * @param {string} actionName - The name of the action to invoke
  * @returns {Promise} - Returns a promise that will be resolved when the steps are completed
  */
-export function invokeAction(project: ProjectConfig, actionName: string) {
+export function invokeAction(
+  project: ProjectConfig,
+  actionName: string,
+  actionArgs: Record<string, any>
+) {
   const ctx = project.context;
   const action = project.getAction(actionName);
   if (action == null) {

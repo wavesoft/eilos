@@ -14,6 +14,10 @@ export class ProjectConfig {
     this.preset = preset;
   }
 
+  getActions(): Action[] {
+    return this.preset.actions || [];
+  }
+
   /**
    * Returns the action definition by name
    * @param name the name of the action

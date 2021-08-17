@@ -6,7 +6,10 @@ import loggerBase from "./logger";
 import { createAllActionFiles } from "./files";
 import { RuntimeContext } from "./struct/RuntimeContext";
 import { ProjectConfig } from "./struct/ProjectConfig";
-import { Preset } from "./types/Preset";
+import type { Preset } from "./types/Preset";
+import type { Action } from "./types/Action";
+
+import packageConfig from "../package.json";
 
 const fsExists = util.promisify(fs.exists);
 const fsMkdir = util.promisify(fs.mkdir);
@@ -37,18 +40,15 @@ function ensureBuildDir(ctx: RuntimeContext): Promise<boolean> {
 }
 
 const defaultPreset: Preset = {
-  engineVersion: "*",
-  actions: [
-    {
-      name: "build",
+  engineVersion: packageConfig.version,
+  actions: {
+    build: {
       run: (ctx: RuntimeContext) => {
         return removeBuildDir(ctx);
       },
     },
-  ],
+  },
 };
-
-const defaultPostActions = {};
 
 /**
  * Entry point for invoking a project action
@@ -57,11 +57,7 @@ const defaultPostActions = {};
  * @param {string} actionName - The name of the action to invoke
  * @returns {Promise} - Returns a promise that will be resolved when the steps are completed
  */
-export function invokeAction(
-  project: ProjectConfig,
-  actionName: string,
-  actionArgs: Record<string, any>
-) {
+export function invokeAction(project: ProjectConfig, actionName: string) {
   const ctx = project.context;
   const action = project.getAction(actionName);
   if (action == null) {
@@ -71,9 +67,9 @@ export function invokeAction(
   }
 
   logger.info(`Performing ${actionName}`);
-  const defaultAction = defaultPreset.actions!.find(
-    (a) => a.name === actionName
-  );
+  const defaultAction = (defaultPreset.actions as Record<string, Action>)[
+    actionName
+  ];
   const preDefault = defaultAction && defaultAction.preRun;
   const preAction = action.preRun;
   const postDefault = defaultAction && defaultAction.postRun;
@@ -86,7 +82,7 @@ export function invokeAction(
 
   // Ensure the build dir is correclty populated
   chain.push(() => Promise.resolve(ensureBuildDir(ctx)));
-  chain.push(() => createAllActionFiles(ctx, action));
+  chain.push(() => createAllActionFiles(ctx, action, actionName));
 
   // Start the action sequencing
   if (preAction) chain.push(() => Promise.resolve(preAction(ctx)));

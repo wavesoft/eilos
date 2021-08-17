@@ -6,3 +6,5 @@ export * from "./struct/RuntimeContext";
 export * from "./types/Action";
 export * from "./types/ConfigFile";
 export * from "./types/Preset";
+export * from "./types/RuntimeConfig";
+export * from "./types/TypeHelpers";

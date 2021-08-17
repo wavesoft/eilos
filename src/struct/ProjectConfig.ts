@@ -1,5 +1,7 @@
 import { Action } from "../types/Action";
-import type { Preset } from "../types/Preset";
+import { PresetRuntimeConfig } from "../types/RuntimeConfig";
+import { UserConfig } from "../types/UserConfig";
+import type { Preset, PresetOptions } from "../types/Preset";
 import type { RuntimeContext } from "./RuntimeContext";
 
 /**
@@ -14,8 +16,36 @@ export class ProjectConfig {
     this.preset = preset;
   }
 
-  getActions(): Action[] {
-    return this.preset.actions || [];
+  getRuntime<O extends PresetOptions>(
+    user: UserConfig
+  ): PresetRuntimeConfig<O> {
+    const ret: any = {};
+
+    // Process the options from the preset
+    if (this.preset.options) {
+      Object.keys(this.preset.options).forEach((key) => {
+        const opt = this.preset.options![key];
+        const userValue = user[key];
+        if (userValue == null) {
+          if (opt.defaultValue != null) {
+            ret[key] = opt.defaultValue;
+          }
+        } else {
+          ret[key] = userValue;
+        }
+      });
+    }
+
+    return ret;
+  }
+
+  getActions(): (Action & { name: string })[] {
+    return Object.keys(this.preset.actions || {}).map((key) => {
+      return {
+        ...this.preset.actions![key],
+        name: key,
+      };
+    });
   }
 
   /**
@@ -24,7 +54,9 @@ export class ProjectConfig {
    * @returns returns the action definition
    */
   getAction(name: string): Action {
-    const action = this.preset.actions!.find((a) => a.name === name);
+    const action = (this.preset.actions as Record<string, Action>)[
+      name
+    ];
     if (!action) {
       throw new Error(`Could not find action "${name}" in the preset`);
     }

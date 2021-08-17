@@ -21,7 +21,11 @@ const logger = loggerBase.child({ component: "files" });
  * @param {string} actionName - The name of the action where the file belongs
  * @param {string} filename - The name of the file to generate a function from
  */
-function createJsFunctionWrapper(writeTo: string, actionName: string, filename: string) {
+function createJsFunctionWrapper(
+  writeTo: string,
+  actionName: string,
+  filename: string
+) {
   const contents = [
     `const eilos = require(${JSON.stringify(getEliosModulePath())});`,
     "module.exports = eilos.invokeFileFunction(",
@@ -36,7 +40,12 @@ function createJsFunctionWrapper(writeTo: string, actionName: string, filename: 
 /**
  * Creates a build file, performing all the required
  */
-function createActionFile(context: RuntimeContext, actionRef: Action, fileName: string) {
+function createActionFile(
+  context: RuntimeContext,
+  actionRef: Action,
+  fileName: string,
+  actionName: string
+) {
   const value = (actionRef.files || {})[fileName];
   const writeTo = context.getConfigFilePath(fileName);
   const writeToDir = path.dirname(writeTo);
@@ -56,7 +65,7 @@ function createActionFile(context: RuntimeContext, actionRef: Action, fileName: 
       // required by the implementation.
       if (writeTo.endsWith(".js") && typeof value === "function") {
         logger.debug(`Writing ${writeTo}`);
-        return createJsFunctionWrapper(writeTo, actionRef.name, fileName);
+        return createJsFunctionWrapper(writeTo, actionName, fileName);
       }
 
       // Collect the contents to put on the file
@@ -82,10 +91,14 @@ function createActionFile(context: RuntimeContext, actionRef: Action, fileName: 
 /**
  * Creates all the build files required for the action
  */
-export function createAllActionFiles(context: RuntimeContext, actionRef: Action) {
+export function createAllActionFiles(
+  context: RuntimeContext,
+  actionRef: Action,
+  actionName: string
+) {
   return Promise.all(
     Object.keys(actionRef.files || {}).map((fileName) => {
-      return createActionFile(context, actionRef, fileName);
+      return createActionFile(context, actionRef, fileName, actionName);
     })
   );
 }

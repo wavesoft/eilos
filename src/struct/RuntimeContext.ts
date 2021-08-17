@@ -6,7 +6,8 @@ import type { Logger } from "winston";
 import * as config from "../config";
 import loggerBase from "../logger";
 import type { ConfigFile } from "../types/ConfigFile";
-import type { UserConfig } from "../types/UserConfig";
+import type { RuntimeConfig } from "../types/RuntimeConfig";
+import { ActionArguments } from "../types/Action";
 
 const logger = loggerBase.child({ component: "conntext" });
 
@@ -29,13 +30,17 @@ export interface RuntimeContextUtil {
 /**
  * Runtime context of eilos, passed around as arguments to build actions
  */
-export class RuntimeContext {
+export class RuntimeContext<
+  Config extends RuntimeConfig = RuntimeConfig,
+  Args extends Object = {}
+> {
   readonly util: RuntimeContextUtil;
   readonly logger: Logger;
 
+  private _args: Args;
   private _env: Record<string, string>;
   private _dir: Record<string, string>;
-  private _config: UserConfig;
+  private _config: Config;
   private _config_files: Record<string, ConfigFile | null>;
 
   constructor(env: Record<string, string>, dir: Record<string, string>) {
@@ -45,8 +50,9 @@ export class RuntimeContext {
     };
     this._env = env;
     this._dir = dir;
-    this._config = {};
+    this._config = {} as Config;
     this._config_files = {};
+    this._args = {} as Args;
     this.logger = logger;
   }
 
@@ -72,6 +78,23 @@ export class RuntimeContext {
   }
 
   /**
+   * Update all the arguments in the context
+   * @param args the arguments to update
+   */
+  updateArgs(args: Partial<Args>) {
+    Object.assign(this._args, args);
+  }
+
+  /**
+   * Return the value for the argument with the given name
+   * @param name the name of the argument
+   * @param defaultValue the default value if the argument is missing
+   */
+  getArg<A extends keyof Args>(name: A, defaultValue?: Args[A]): any {
+    return this._args[name] == null ? defaultValue : this._args[name];
+  }
+
+  /**
    * Define a directory variable that can be later fetched from 'getDirectory'
    */
   setDirectory(alias: string, path: string): this {
@@ -94,14 +117,17 @@ export class RuntimeContext {
   /**
    * Update run-time configuration
    */
-  updateConfig(obj: Partial<UserConfig>): void {
+  updateConfig(obj: Partial<Config>): void {
     this._config = merge(this._config, obj, { arrayMerge: overwriteMerge });
   }
 
   /**
    * Return section from the run-time configuration
    */
-  getConfig(name: string, defaults: any = null): any {
+  getConfig<K extends keyof Config>(
+    name: K,
+    defaults?: Config[K]
+  ): Config[K] | undefined {
     const value = this._config[name];
     if (typeof value === "object" && value && !Array.isArray(value)) {
       return Object.assign({}, defaults, value);

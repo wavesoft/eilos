@@ -1,4 +1,4 @@
-import { Action } from "./Action";
+import type { PresetActions } from "./Preset";
 
 /**
  * Describes the configuration that the user can provide to eilos
@@ -17,11 +17,12 @@ export interface UserConfig {
    * One or more custom actions, implemented locally by the package
    * definition. (Not recommended, but allowed)
    */
-  eilosActions?: Action[];
+  eilosActions?: PresetActions;
 
   /**
-   * Every other property in the object are considered values to
-   * various options exposed by the preset.
+   * (Additional variables may be present and they are strongly
+   *  typed when defining the preset configuration. Refer to the
+   *  `RuntimeConfig` definition that holds them).
    */
-  [key: string]: any;
+  [K: string]: any;
 }

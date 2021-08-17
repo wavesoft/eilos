@@ -1,13 +1,15 @@
 import fs from "fs";
 import path from "path";
 import findUp from "findup-sync";
+
 import { defaultContextForProject } from "./context";
 import { expandParametricConfig } from "./env";
-import { Preset } from "./types/Preset";
-import { RuntimeContext } from "./struct/RuntimeContext";
-import { UserConfig } from "./types/UserConfig";
-import loggerBase from "./logger";
 import { ProjectConfig } from "./struct/ProjectConfig";
+import { RuntimeContext } from "./struct/RuntimeContext";
+import loggerBase from "./logger";
+import type { Action } from "./types/Action";
+import type { Preset } from "./types/Preset";
+import type { UserConfig } from "./types/UserConfig";
 
 const logger = loggerBase.child({ component: "config" });
 
@@ -187,7 +189,7 @@ export function resolveFilePath(name: string, searchIn?: string) {
  */
 function getPresetName(userConfig: UserConfig, packageJson: any): string {
   // First prefer user-specified configuration
-  if (userConfig.preset) return userConfig.preset;
+  if (userConfig.eilosPreset) return userConfig.eilosPreset;
 
   // Then guess the preset by scanning the package configuration names
   const allDeps = Object.assign(
@@ -230,20 +232,22 @@ function composePreset(packagePreset: Preset, userConfig: UserConfig): Preset {
   const preset = Object.assign({}, packagePreset); // Shallow copy
 
   // Make sure all the required fields are present
-  if (!preset.actions) preset.actions = [];
+  if (!preset.actions) preset.actions = {};
   if (!preset.options) preset.options = {};
 
   // If we have custom actions from the user, bring them in
   if (userConfig.eilosActions) {
-    for (const action of userConfig.eilosActions) {
-      const prevAction = preset.actions!.find((a) => a.name === action.name);
+    for (const name in userConfig.eilosActions) {
+      const prevAction = (preset.actions as Record<string, Action>)[name];
+      const action = userConfig.eilosActions[name];
+
       if (prevAction) {
         logger.debug(
-          `Overriding preset action '${action.name}' using custom action config`
+          `Overriding preset action '${name}' using custom action config`
         );
         Object.assign(prevAction, action);
       } else {
-        preset.actions.push(action);
+        preset.actions[name] = action;
       }
     }
   }
@@ -277,7 +281,9 @@ function getProjectConfig(context: RuntimeContext) {
   const preset = composePreset(packagePreset, userConfig);
 
   // Initialize the project config
-  return new ProjectConfig(preset, context);
+  const config = new ProjectConfig(preset, context);
+  config.context.updateConfig(config.getRuntime(userConfig));
+  return config;
 }
 
 export function getDefaultProjectConfig() {

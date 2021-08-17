@@ -1,41 +1,45 @@
 import type { ConfigFile } from "./ConfigFile";
 import type { RuntimeContext } from "../struct/RuntimeContext";
+import { PresetOptions } from "./Preset";
+import { PresetRuntimeConfig } from "./RuntimeConfig";
 
-export interface ActionArgumentBase {
-  name: string;
-  description?: string;
-}
-
-export interface ActionPositionalArgument extends ActionArgumentBase {
-  required?: boolean;
+export interface ActionArgument {
   type?: "string" | "number" | "boolean";
-}
 
-export interface ActionNamedArgument extends ActionArgumentBase {
-  required?: boolean;
-  short?: string;
-  type?: "string" | "number" | "boolean";
+  positional?: boolean;
   defaultValue?: any;
-}
-
-export interface ActionFlagArgument extends ActionArgumentBase {
+  description?: string;
+  required?: boolean;
   short?: string;
 }
 
-export type ActionArgument =
-  | ActionPositionalArgument
-  | ActionFlagArgument
-  | ActionNamedArgument;
+export interface ActionArguments {
+  [K: string]: ActionArgument;
+}
+
+type ArgumentType<A extends ActionArgument> = A extends {
+  type: "string";
+}
+  ? string
+  : A extends { type: "number" }
+  ? number
+  : A extends { type: "boolean" }
+  ? boolean
+  : never;
+
+export type ArgumentsType<A extends ActionArguments> = {
+  [K in keyof A]: A[K] extends { required: true }
+    ? ArgumentType<A[K]>
+    : ArgumentType<A[K]> | undefined;
+};
 
 /**
  * An action definition interface
  */
-export interface Action {
-  /**
-   * The name of the action to invoke
-   */
-  name: string;
-
+export interface Action<
+  Args extends ActionArguments = ActionArguments,
+  Opts extends PresetOptions = PresetOptions
+> {
   /**
    * An optional description for this action
    */
@@ -62,14 +66,7 @@ export interface Action {
    *  }
    * ```
    */
-  arguments?: {
-    // One or more positional arguments
-    positional?: ActionPositionalArgument[];
-    // One or more flag arguments
-    flag?: ActionFlagArgument[];
-    // One or more named arguments
-    named?: ActionNamedArgument[];
-  };
+  arguments?: Args;
 
   /**
    * One or more files associated with this action
@@ -88,15 +85,21 @@ export interface Action {
   /**
    * Action handler before the action is executed
    */
-  preRun?: (ctx: RuntimeContext) => Promise<any>;
+  preRun?: (
+    ctx: RuntimeContext<PresetRuntimeConfig<Opts>, ArgumentsType<Args>>
+  ) => Promise<any>;
 
   /**
    * Action handler
    */
-  run: (ctx: RuntimeContext) => Promise<any>;
+  run: (
+    ctx: RuntimeContext<PresetRuntimeConfig<Opts>, ArgumentsType<Args>>
+  ) => Promise<any>;
 
   /**
    * Action handler before the action is executed
    */
-  postRun?: (ctx: RuntimeContext) => Promise<any>;
+  postRun?: (
+    ctx: RuntimeContext<PresetRuntimeConfig<Opts>, ArgumentsType<Args>>
+  ) => Promise<any>;
 }

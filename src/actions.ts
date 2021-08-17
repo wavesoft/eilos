@@ -1,14 +1,16 @@
 import fs from "fs";
 import util from "util";
-import rimraf from "rimraf";
+import rimrafSync from "rimraf";
 
 import loggerBase from "./logger";
 import { createAllActionFiles } from "./files";
 import { RuntimeContext } from "./struct/RuntimeContext";
 import { ProjectConfig } from "./struct/ProjectConfig";
+import { Preset } from "./types/Preset";
 
 const fsExists = util.promisify(fs.exists);
 const fsMkdir = util.promisify(fs.mkdir);
+const rimraf = util.promisify(rimrafSync);
 const logger = loggerBase.child({ component: "actions" });
 
 function removeBuildDir(ctx: RuntimeContext): Promise<void> {
@@ -34,10 +36,16 @@ function ensureBuildDir(ctx: RuntimeContext): Promise<boolean> {
   });
 }
 
-const defaultPreActions = {
-  build: (ctx: RuntimeContext) => {
-    return removeBuildDir(ctx);
-  },
+const defaultPreset: Preset = {
+  engineVersion: "*",
+  actions: [
+    {
+      name: "build",
+      run: (ctx: RuntimeContext) => {
+        return removeBuildDir(ctx);
+      },
+    },
+  ],
 };
 
 const defaultPostActions = {};
@@ -63,29 +71,32 @@ export function invokeAction(
   }
 
   logger.info(`Performing ${actionName}`);
-  const preDefault = defaultPreActions[actionName];
+  const defaultAction = defaultPreset.actions!.find(
+    (a) => a.name === actionName
+  );
+  const preDefault = defaultAction && defaultAction.preRun;
   const preAction = action.preRun;
-  const postDefault = defaultPostActions[actionName];
+  const postDefault = defaultAction && defaultAction.postRun;
   const postAction = action.postRun;
   const runAction = action.run;
-  const chain = [];
+  const chain: Array<() => Promise<any>> = [];
 
   // Run early pre-action function
-  if (preDefault) chain.push((e) => Promise.resolve(preDefault(ctx)));
+  if (preDefault) chain.push(() => Promise.resolve(preDefault(ctx)));
 
   // Ensure the build dir is correclty populated
-  chain.push((e) => Promise.resolve(ensureBuildDir(ctx)));
-  chain.push((e) => createAllActionFiles(ctx, action));
+  chain.push(() => Promise.resolve(ensureBuildDir(ctx)));
+  chain.push(() => createAllActionFiles(ctx, action));
 
   // Start the action sequencing
-  if (preAction) chain.push((e) => Promise.resolve(preAction(ctx)));
-  if (runAction) chain.push((e) => Promise.resolve(runAction(ctx)));
-  if (postAction) chain.push((e) => Promise.resolve(postAction(ctx)));
-  if (postDefault) chain.push((e) => Promise.resolve(postDefault(ctx)));
+  if (preAction) chain.push(() => Promise.resolve(preAction(ctx)));
+  if (runAction) chain.push(() => Promise.resolve(runAction(ctx)));
+  if (postAction) chain.push(() => Promise.resolve(postAction(ctx)));
+  if (postDefault) chain.push(() => Promise.resolve(postDefault(ctx)));
 
   // We don't need the config dir after we are done unless we are running in debug mode
   if (!ctx.getConfig("debug", false)) {
-    chain.push((e) => Promise.resolve(removeConfigDir(ctx)));
+    chain.push(() => Promise.resolve(removeConfigDir(ctx)));
   }
 
   return chain.reduce((promise, chain) => {

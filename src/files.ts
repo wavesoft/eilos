@@ -4,6 +4,9 @@ import fs from "fs";
 
 import loggerBase from "./logger";
 import { getDefaultProjectConfig, getEliosModulePath } from "./config";
+import { RuntimeContext } from "./struct/RuntimeContext";
+import { Action } from "./types/Action";
+import { ConfigFile } from "./types/ConfigFile";
 
 const fsWriteFile = util.promisify(fs.writeFile);
 const fsExists = util.promisify(fs.exists);
@@ -18,7 +21,7 @@ const logger = loggerBase.child({ component: "files" });
  * @param {string} actionName - The name of the action where the file belongs
  * @param {string} filename - The name of the file to generate a function from
  */
-function createJsFunctionWrapper(writeTo, actionName, filename) {
+function createJsFunctionWrapper(writeTo: string, actionName: string, filename: string) {
   const contents = [
     `const eilos = require(${JSON.stringify(getEliosModulePath())});`,
     "module.exports = eilos.invokeFileFunction(",
@@ -33,8 +36,8 @@ function createJsFunctionWrapper(writeTo, actionName, filename) {
 /**
  * Creates a build file, performing all the required
  */
-function createActionFile(context, actionRef, fileName) {
-  const value = actionRef.files[fileName];
+function createActionFile(context: RuntimeContext, actionRef: Action, fileName: string) {
+  const value = (actionRef.files || {})[fileName];
   const writeTo = context.getConfigFilePath(fileName);
   const writeToDir = path.dirname(writeTo);
 
@@ -57,7 +60,7 @@ function createActionFile(context, actionRef, fileName) {
       }
 
       // Collect the contents to put on the file
-      let contents = value;
+      let contents: ConfigFile = value;
       if (typeof value === "function") {
         contents = value(context);
       }
@@ -72,16 +75,16 @@ function createActionFile(context, actionRef, fileName) {
       }
 
       logger.debug(`Writing ${writeTo}`);
-      return fsWriteFile(writeTo, contents);
+      return fsWriteFile(writeTo, contents.toString());
     });
 }
 
 /**
  * Creates all the build files required for the action
  */
-export function createAllActionFiles(context, actionRef) {
+export function createAllActionFiles(context: RuntimeContext, actionRef: Action) {
   return Promise.all(
-    Object.keys(actionRef.files).map((fileName) => {
+    Object.keys(actionRef.files || {}).map((fileName) => {
       return createActionFile(context, actionRef, fileName);
     })
   );
@@ -94,7 +97,7 @@ export function createAllActionFiles(context, actionRef) {
  * @param {string} filename - The name of the file to generate a function from
  * @returns {any} - Returns whatever the function produced
  */
-export function invokeFileFunction(actionName, filename) {
+export function invokeFileFunction(actionName: string, filename: string) {
   const project = getDefaultProjectConfig();
   const action = project.getAction(actionName);
   if (!action) {
@@ -103,7 +106,7 @@ export function invokeFileFunction(actionName, filename) {
     );
   }
 
-  const file = action.files[filename];
+  const file = (action.files || {})[filename];
   if (!file) {
     throw new TypeError(
       "File " + filename + " was not found in action " + actionName

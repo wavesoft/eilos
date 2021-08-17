@@ -1,10 +1,12 @@
 {
   "name": "eilos",
-  "version": "1.0.0",
+  "version": "1.0.0-rc1",
   "description": "Web App Build Abstraction",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "NODE_ENV=production webpack"
   },
   "bin": "bin/eilos.js",
   "publishConfig": {
@@ -14,6 +16,12 @@
   "tags": [
     "build",
     "lint"
+  ],
+  "files": [
+    "dist/*",
+    "bin/*",
+    "package.json",
+    "README.md"
   ],
   "license": "MIT",
   "dependencies": {
@@ -27,7 +35,12 @@
     "yargs": "^17.1.1"
   },
   "devDependencies": {
+    "@types/findup-sync": "^4.0.1",
+    "@types/rimraf": "^3.0.1",
     "ajv": "^8.6.2",
-    "typescript": "^4.3.5"
+    "ts-loader": "^9.2.5",
+    "typescript": "^4.3.5",
+    "webpack": "^5.50.0",
+    "webpack-cli": "^4.8.0"
   }
 }

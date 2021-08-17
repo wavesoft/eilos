@@ -10,8 +10,11 @@ import type { UserConfig } from "../types/UserConfig";
 
 const logger = loggerBase.child({ component: "conntext" });
 
-const overwriteMerge = (destinationArray, sourceArray, options) =>
-  [].concat(destinationArray, sourceArray);
+const overwriteMerge = (
+  destinationArray: any[],
+  sourceArray: any[],
+  options: any
+) => ([] as any[]).concat(destinationArray, sourceArray);
 
 /**
  * Utility functions available for re-use by implementations
@@ -33,7 +36,7 @@ export class RuntimeContext {
   private _env: Record<string, string>;
   private _dir: Record<string, string>;
   private _config: UserConfig;
-  private _config_files: Record<string, ConfigFile>;
+  private _config_files: Record<string, ConfigFile | null>;
 
   constructor(env: Record<string, string>, dir: Record<string, string>) {
     this.util = {
@@ -163,18 +166,18 @@ export class RuntimeContext {
     args?: string[],
     options?: execa.Options
   ): execa.ExecaChildProcess {
-    logger.debug(`Invoking ${binary} ${args.join(" ")}`);
+    logger.debug(`Invoking ${binary} ${(args || []).join(" ")}`);
     return execa(
       binary,
       args,
       merge(
-        {
+        <execa.Options>{
           localDir: this.getDirectory("project"),
           preferLocal: true,
           stdio: "inherit",
           env: this._env,
         },
-        options
+        options || {}
       )
     );
   }

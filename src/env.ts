@@ -25,7 +25,7 @@ function expandFunction(
       return obj["@render"](context);
     }
 
-    return keys.reduce((ret, key) => {
+    return keys.reduce((ret: Record<string, any>, key: string) => {
       if (keyFilter(key)) {
         ret[key] = expandFunction(obj[key], context, keyFilter);
       } else {
@@ -40,18 +40,18 @@ function expandFunction(
 
 /**
  * Expands all the parametric values in the user configuration
- * 
+ *
  * To use a dynamic value, use the { "@render": (ctx) => { ... } }
  * value, for example:
- * 
+ *
  * {
  *   value: {
  *    "@render": (ctx) => {
  *    ...
- *    } 
+ *    }
  *  }
  * }
- * 
+ *
  * @param config the user configuration object
  * @param context the run-time context to use
  * @param keyFilter an optional function to use for filtering-out keys

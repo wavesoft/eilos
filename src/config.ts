@@ -18,12 +18,6 @@ const PATH_BUILD = "build";
 const PATH_NODE_MODULES = "node_modules";
 const PRESET_PREFIX = "eilos-preset-";
 
-const overwriteMerge = (
-  destinationArray: any[],
-  sourceArray: any[],
-  options: any
-) => [].concat(destinationArray, sourceArray);
-
 /**
  * Gets the full path to the elios node module
  *
@@ -291,7 +285,3 @@ export function getDefaultProjectConfig() {
   const context = defaultContextForProject(getProjectRoot());
   return getProjectConfig(context);
 }
-
-function getConfigFile(component) {}
-
-function getConfigFilePath(component) {}

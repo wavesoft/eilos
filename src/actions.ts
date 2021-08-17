@@ -1,39 +1,41 @@
-"use strict";
+import fs from "fs";
+import util from "util";
+import rimraf from "rimraf";
 
-const util = require("util");
-const rimraf = util.promisify(require("rimraf"));
-const fs = require("fs");
+import loggerBase from "./logger";
+import { createAllActionFiles } from "./files";
+import { RuntimeContext } from "./struct/RuntimeContext";
+import { ProjectConfig } from "./struct/ProjectConfig";
+
 const fsExists = util.promisify(fs.exists);
 const fsMkdir = util.promisify(fs.mkdir);
+const logger = loggerBase.child({ component: "actions" });
 
-const logger = require("./logger").child({ component: "actions" });
-const { createAllActionFiles } = require("./files");
-
-function removeBuildDir(ctx) {
+function removeBuildDir(ctx: RuntimeContext): Promise<void> {
   const buildDir = ctx.getDirectory("dist");
   logger.debug(`Removing ${buildDir}`);
   return rimraf(buildDir);
 }
 
-function removeConfigDir(ctx) {
+function removeConfigDir(ctx: RuntimeContext): Promise<void> {
   const configDir = ctx.getDirectory("dist.config");
   logger.debug(`Removing ${configDir}`);
   return rimraf(configDir);
 }
 
-function ensureBuildDir(ctx) {
+function ensureBuildDir(ctx: RuntimeContext): Promise<boolean> {
   const buildDir = ctx.getDirectory("dist");
   return fsExists(buildDir).then((ok) => {
     if (!ok) {
       logger.debug(`Creating ${buildDir}`);
-      return fsMkdir(buildDir, { recursive: true });
+      return fsMkdir(buildDir, { recursive: true }).then(() => true);
     }
-    return true;
+    return false;
   });
 }
 
 const defaultPreActions = {
-  build: (ctx) => {
+  build: (ctx: RuntimeContext) => {
     return removeBuildDir(ctx);
   },
 };
@@ -47,9 +49,9 @@ const defaultPostActions = {};
  * @param {string} actionName - The name of the action to invoke
  * @returns {Promise} - Returns a promise that will be resolved when the steps are completed
  */
-exports.invokeAction = function (project, actionName) {
+export function invokeAction(project: ProjectConfig, actionName: string) {
   const ctx = project.context;
-  const action = project.actions[actionName];
+  const action = project.getAction(actionName);
   if (action == null) {
     return Promise.reject(
       new TypeError("Action " + actionName + " was not found in project config")
@@ -58,10 +60,10 @@ exports.invokeAction = function (project, actionName) {
 
   logger.info(`Performing ${actionName}`);
   const preDefault = defaultPreActions[actionName];
-  const preAction = project.actions[actionName].preRun;
+  const preAction = action.preRun;
   const postDefault = defaultPostActions[actionName];
-  const postAction = project.actions[actionName].postRun;
-  const runAction = project.actions[actionName].run;
+  const postAction = action.postRun;
+  const runAction = action.run;
   const chain = [];
 
   // Run early pre-action function
@@ -69,7 +71,7 @@ exports.invokeAction = function (project, actionName) {
 
   // Ensure the build dir is correclty populated
   chain.push((e) => Promise.resolve(ensureBuildDir(ctx)));
-  chain.push((e) => createAllActionFiles(ctx, project.actions[actionName]));
+  chain.push((e) => createAllActionFiles(ctx, action));
 
   // Start the action sequencing
   if (preAction) chain.push((e) => Promise.resolve(preAction(ctx)));
@@ -85,4 +87,4 @@ exports.invokeAction = function (project, actionName) {
   return chain.reduce((promise, chain) => {
     return promise.then(chain);
   }, Promise.resolve(null));
-};
+}

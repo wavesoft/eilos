@@ -1,4 +1,7 @@
-"use strict";
+import type { RuntimeContext } from "./struct/RuntimeContext";
+import type { UserConfig } from "./types/UserConfig";
+
+export type KeyFilter = (key: string) => boolean;
 
 /**
  * Expand all function branches of the given configuration tree
@@ -7,7 +10,11 @@
  * @param {Object} context - The context object to pass to the function
  * @param {function} keyFilter - Filter function to
  */
-function expandFunction(obj, context, keyFilter) {
+function expandFunction(
+  obj: any,
+  context: RuntimeContext,
+  keyFilter: KeyFilter
+): any {
   if (Array.isArray(obj)) {
     return obj.map((v) => expandFunction(v, context, keyFilter));
   } else if (obj === null) {
@@ -31,21 +38,29 @@ function expandFunction(obj, context, keyFilter) {
   }
 }
 
-exports.expandParametricConfig = (config, context, keyFilter = () => true) => {
+/**
+ * Expands all the parametric values in the user configuration
+ * 
+ * To use a dynamic value, use the { "@render": (ctx) => { ... } }
+ * value, for example:
+ * 
+ * {
+ *   value: {
+ *    "@render": (ctx) => {
+ *    ...
+ *    } 
+ *  }
+ * }
+ * 
+ * @param config the user configuration object
+ * @param context the run-time context to use
+ * @param keyFilter an optional function to use for filtering-out keys
+ * @returns the user config, with the values patched
+ */
+export function expandParametricConfig(
+  config: UserConfig,
+  context: RuntimeContext,
+  keyFilter: KeyFilter = () => true
+): UserConfig {
   return expandFunction(config, context, keyFilter);
-};
-
-// function merge(a, b) {
-//   // Type changes and non-objects get overwritten with the newer value
-//   if (typeof a != typeof b || typeof b !== "object") {
-//     return b;
-//   }
-
-//   // Arrays are merged, unless `b` is not an array, in which case `a` is
-//   // replaced with b.
-//   if (Array.isArray(a)) {
-//     if (!Array.isArray(b)) return b;
-//     return [].concat(a, b);
-//   }
-// }
-// exports.merge = (...objects) => {};
+}

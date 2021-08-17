@@ -1,14 +1,14 @@
-"use strict";
+import util from "util";
+import path from "path";
+import fs from "fs";
 
-const util = require("util");
-const path = require("path");
-const fs = require("fs");
+import loggerBase from "./logger";
+import { getDefaultProjectConfig, getEliosModulePath } from "./config";
+
 const fsWriteFile = util.promisify(fs.writeFile);
 const fsExists = util.promisify(fs.exists);
 const fsMkdir = util.promisify(fs.mkdir);
-
-const logger = require("./logger").child({ component: "files" });
-const { getDefaultProjectConfig, getEliosModulePath } = require("./config");
+const logger = loggerBase.child({ component: "files" });
 
 /**
  * Create a javascript file that will call-out to the function handler
@@ -43,9 +43,9 @@ function createActionFile(context, actionRef, fileName) {
     .then((ok) => {
       if (!ok) {
         logger.debug(`Creating ${writeToDir}`);
-        return fsMkdir(writeToDir, { recursive: true });
+        return fsMkdir(writeToDir, { recursive: true }).then(() => true);
       }
-      return true;
+      return false;
     })
     .then((_) => {
       // On the special case of javascript function, we can create a function
@@ -79,7 +79,7 @@ function createActionFile(context, actionRef, fileName) {
 /**
  * Creates all the build files required for the action
  */
-function createAllActionFiles(context, actionRef) {
+export function createAllActionFiles(context, actionRef) {
   return Promise.all(
     Object.keys(actionRef.files).map((fileName) => {
       return createActionFile(context, actionRef, fileName);
@@ -94,9 +94,9 @@ function createAllActionFiles(context, actionRef) {
  * @param {string} filename - The name of the file to generate a function from
  * @returns {any} - Returns whatever the function produced
  */
-function invokeFileFunction(actionName, filename) {
+export function invokeFileFunction(actionName, filename) {
   const project = getDefaultProjectConfig();
-  const action = project.actions[actionName];
+  const action = project.getAction(actionName);
   if (!action) {
     throw new TypeError(
       "Action " + actionName + " was not found in project config"
@@ -115,8 +115,3 @@ function invokeFileFunction(actionName, filename) {
   }
   return file;
 }
-
-module.exports = {
-  createAllActionFiles,
-  invokeFileFunction,
-};

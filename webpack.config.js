@@ -1,9 +1,11 @@
 const path = require("path");
+const isDevel = process.env.NODE_ENV === "development";
 
 module.exports = {
   entry: "./src/index.ts",
   target: "node",
-  mode: process.env.NODE_ENV === "development" ? "development" : "production",
+  devtool: isDevel ? "source-map" : false,
+  mode: isDevel ? "development" : "production",
   module: {
     rules: [
       {
@@ -19,5 +21,9 @@ module.exports = {
   output: {
     filename: "index.js",
     path: path.resolve(__dirname, "dist"),
+    library: {
+      name: "eilos",
+      type: "umd",
+    },
   },
 };

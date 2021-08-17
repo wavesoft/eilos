@@ -153,7 +153,7 @@ export class RuntimeContext {
    * @param name the name of the package to search
    */
   resolveProjectPackage(name: string): string {
-    return require.resolve(name, {
+    return __non_webpack_require__.resolve(name, {
       paths: [path.join(this.getDirectory("project"), "node_modules")],
     });
   }

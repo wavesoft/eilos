@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
 import findUp from "findup-sync";
-
 import { defaultContextForProject } from "./context";
 import { expandParametricConfig } from "./env";
 import { Preset } from "./types/Preset";
@@ -33,11 +32,11 @@ export function getEliosModulePath(): string {
  * @returns {string}
  */
 function getProjectRoot(): string {
-  const path = findUp("package.json", {});
-  if (path == null) {
+  const pkgPath = findUp("package.json", {});
+  if (pkgPath == null) {
     throw new Error(`Could not find 'package.json' in the current directory!`);
   }
-  return path;
+  return path.dirname(pkgPath);
 }
 
 /**
@@ -72,7 +71,7 @@ function getBuildPath(): string {
  */
 function getUserConfigFrom(path: string): UserConfig | null {
   try {
-    const conf = require(path);
+    const conf = __non_webpack_require__(path);
     const confType = typeof conf;
     if (typeof conf !== "object") {
       throw new Error(
@@ -216,10 +215,10 @@ function getPresetName(userConfig: UserConfig, packageJson: any): string {
  */
 function loadPresetFromPackage(presetName: string): Preset {
   const pkgPath = resolvePackagePath(presetName);
-  const presetPkg = require(path.join(pkgPath, "package.json"));
+  const presetPkg = __non_webpack_require__(path.join(pkgPath, "package.json"));
   const presetIndex = path.join(pkgPath, presetPkg.main || "index.js");
 
-  return require(presetIndex);
+  return __non_webpack_require__(presetIndex);
 }
 
 /**
@@ -262,7 +261,7 @@ function getProjectConfig(context: RuntimeContext) {
   // Load the project's 'package.json' that we are using
   // for various different purposes.
   const packageJsonPath = getPackageConfigPath();
-  const packageJson = require(packageJsonPath);
+  const packageJson = __non_webpack_require__(packageJsonPath);
   logger.debug(`Found project config at '${packageJsonPath}'`);
 
   // Then load the user config from the relevant sources

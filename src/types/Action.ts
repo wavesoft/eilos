@@ -1,7 +1,7 @@
 import type { ConfigFile } from "./ConfigFile";
 import type { RuntimeContext } from "../struct/RuntimeContext";
-import { PresetOptions } from "./Preset";
-import { PresetRuntimeConfig } from "./RuntimeConfig";
+import type { PresetOptions } from "./Preset";
+import type { PresetRuntimeConfig } from "./RuntimeConfig";
 
 export interface ActionArgument {
   type?: "string" | "number" | "boolean";

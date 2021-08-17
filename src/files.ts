@@ -5,8 +5,8 @@ import fs from "fs";
 import loggerBase from "./logger";
 import { getDefaultProjectConfig, getEliosModulePath } from "./config";
 import { RuntimeContext } from "./struct/RuntimeContext";
-import { Action } from "./types/Action";
-import { ConfigFile } from "./types/ConfigFile";
+import type { Action } from "./types/Action";
+import type { ConfigFile } from "./types/ConfigFile";
 
 const fsWriteFile = util.promisify(fs.writeFile);
 const fsExists = util.promisify(fs.exists);

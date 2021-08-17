@@ -4,7 +4,7 @@ const isDevel = process.env.NODE_ENV === "development";
 module.exports = {
   entry: "./src/index.ts",
   target: "node",
-  devtool: isDevel ? "source-map" : false,
+  devtool: "source-map", // isDevel ? "source-map" : false,
   mode: isDevel ? "development" : "production",
   module: {
     rules: [

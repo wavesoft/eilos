@@ -1,6 +1,6 @@
-import { Action } from "../types/Action";
-import { PresetRuntimeConfig } from "../types/RuntimeConfig";
-import { UserConfig } from "../types/UserConfig";
+import type { Action } from "../types/Action";
+import type { PresetRuntimeConfig } from "../types/RuntimeConfig";
+import type { UserConfig } from "../types/UserConfig";
 import type { Preset, PresetOptions } from "../types/Preset";
 import type { RuntimeContext } from "./RuntimeContext";
 

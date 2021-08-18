@@ -5,8 +5,9 @@ import type { SomeJTDSchemaType } from "ajv/dist/types/jtd-schema";
  * Configuration parameters for a preset option
  */
 export interface PresetOption {
-  description?: string;
   defaultValue?: any;
+  deprecated?: string;
+  description?: string;
   schema?: SomeJTDSchemaType | ReadonlyArray<SomeJTDSchemaType>;
 }
 

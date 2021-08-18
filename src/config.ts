@@ -280,9 +280,21 @@ function getProjectConfig(context: RuntimeContext) {
   // Include custom actions int he preset
   const preset = composePreset(packagePreset, userConfig);
 
-  // Initialize the project config
+  // Create a project config
   const config = new ProjectConfig(preset, context);
-  config.context.updateConfig(config.getRuntime(userConfig));
+
+  // Collect run-time config and warn for deprecated fields
+  const runtimeConfig = config.getRuntime(userConfig);
+  Object.keys(preset.options || {}).forEach((key) => {
+    const opt = preset.options![key];
+    if (opt.deprecated) {
+      logger.warn(
+        `Configuration option '${key}' is deprecated: ${opt.deprecated}`
+      );
+    }
+  });
+
+  config.context.updateConfig(runtimeConfig);
   return config;
 }
 

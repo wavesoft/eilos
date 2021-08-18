@@ -15,7 +15,7 @@ export interface PresetOptions {
 }
 
 export interface PresetActions<
-  O extends PresetOptions,
+  O extends PresetOptions = PresetOptions,
   Args extends ActionArguments = ActionArguments
 > {
   [K: string]: Action<O, Args>;

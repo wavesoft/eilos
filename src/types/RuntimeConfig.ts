@@ -1,12 +1,11 @@
 import type { JTDDataType } from "ajv/dist/types/jtd-schema";
 import type { SomeJTDSchemaType } from "ajv/dist/types/jtd-schema";
 import type { PresetOptions } from "./Preset";
-import type { UserConfig } from "./UserConfig";
 
 /**
  * Holds the definition of the run-time configuration parameters
  */
-export interface RuntimeConfig extends UserConfig {
+export interface RuntimeConfig {
   /**
    * Indicates that the system is running in debug mode
    */

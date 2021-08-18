@@ -1,4 +1,4 @@
-import type { Action } from "./Action";
+import type { Action, ActionArguments } from "./Action";
 import type { SomeJTDSchemaType } from "ajv/dist/types/jtd-schema";
 
 /**
@@ -14,16 +14,19 @@ export interface PresetOptions {
   [K: string]: PresetOption;
 }
 
-export interface PresetActions {
-  [K: string]: Action;
+export interface PresetActions<
+  O extends PresetOptions,
+  Args extends ActionArguments = ActionArguments
+> {
+  [K: string]: Action<O, Args>;
 }
 
 /**
  * Preset definition
  */
 export interface Preset<
-  Actions extends PresetActions = PresetActions,
-  Options extends PresetOptions = PresetOptions
+  Options extends PresetOptions = PresetOptions,
+  Actions extends PresetActions<Options> = PresetActions<Options>
 > {
   /**
    * The minimum required engine version

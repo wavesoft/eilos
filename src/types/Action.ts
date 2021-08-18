@@ -17,6 +17,8 @@ export interface ActionArguments {
   [K: string]: ActionArgument;
 }
 
+export type SomeActionArguments = Record<string, ActionArgument>;
+
 type ArgumentType<A extends ActionArgument> = A extends {
   type: "string";
 }
@@ -34,11 +36,21 @@ export type ArgumentsType<A extends ActionArguments> = {
 };
 
 /**
+ * Function signature for all the .runXXX methods
+ */
+export type ActionHandler<
+  Opts extends PresetOptions = PresetOptions,
+  Args extends ActionArguments = ActionArguments
+> = (
+  ctx: RuntimeContext<PresetRuntimeConfig<Opts>, ArgumentsType<Args>>
+) => Promise<any>;
+
+/**
  * An action definition interface
  */
 export interface Action<
-  Args extends ActionArguments = ActionArguments,
-  Opts extends PresetOptions = PresetOptions
+  Opts extends PresetOptions = PresetOptions,
+  Args extends ActionArguments = ActionArguments
 > {
   /**
    * An optional description for this action
@@ -80,26 +92,23 @@ export interface Action<
    * In this case, a proxy `.js` file is generated that will forward the
    * request to the file contents generator at run-time
    */
-  files?: Record<string, ConfigFile>;
+  files?: Record<
+    string,
+    ConfigFile<PresetRuntimeConfig<Opts>, ArgumentsType<Args>>
+  >;
 
   /**
    * Action handler before the action is executed
    */
-  preRun?: (
-    ctx: RuntimeContext<PresetRuntimeConfig<Opts>, ArgumentsType<Args>>
-  ) => Promise<any>;
+  preRun?: ActionHandler<Opts, Args>;
 
   /**
    * Action handler
    */
-  run: (
-    ctx: RuntimeContext<PresetRuntimeConfig<Opts>, ArgumentsType<Args>>
-  ) => Promise<any>;
+  run?: ActionHandler<Opts, Args>;
 
   /**
    * Action handler before the action is executed
    */
-  postRun?: (
-    ctx: RuntimeContext<PresetRuntimeConfig<Opts>, ArgumentsType<Args>>
-  ) => Promise<any>;
+  postRun?: ActionHandler<Opts, Args>;
 }

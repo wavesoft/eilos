@@ -14,7 +14,7 @@ export interface RuntimeConfig {
   /**
    * Extra arguments from the command-line
    */
-  argv: (string | number)[];
+  argv: string[];
 }
 
 export type SomeRuntimeConfig = {

@@ -1,7 +1,8 @@
 import fs from "fs";
 import path from "path";
 import findUp from "findup-sync";
-import Ajv from "ajv/dist/ajv";
+import Ajv from "ajv/dist/jtd";
+import type { SomeJTDSchemaType } from "ajv/dist/types/jtd-schema";
 
 import { defaultContextForProject } from "./context";
 import { expandParametricConfig } from "./env";
@@ -141,15 +142,15 @@ function getUserConfig(packageJson: any): UserConfig {
   }
 
   if (userFile) {
-    logger.debug(`Using user configuration from .eilos file`);
+    logger.debug(`Using user customizations from .eilos file`);
     return userFile;
   }
   if (userJson) {
-    logger.debug(`Using user configuration from package.json`);
+    logger.debug(`Using user customizations from package.json`);
     return userJson;
   }
 
-  logger.debug(`Did not load any user configuration`);
+  logger.debug(`Did not load any user customizations`);
   return {};
 }
 
@@ -215,14 +216,24 @@ function getPresetName(userConfig: UserConfig, packageJson: any): string {
 }
 
 /**
- * Load the preset configuration from the given
+ * Load the preset configuration from the given package name
  */
 function loadPresetFromPackage(presetName: string): Preset {
   const pkgPath = resolvePackagePath(presetName);
-  const presetPkg = __non_webpack_require__(path.join(pkgPath, "package.json"));
-  const presetIndex = path.join(pkgPath, presetPkg.main || "index.js");
+  logger.silly(`Resolved preset package at ${pkgPath}`);
 
-  return __non_webpack_require__(presetIndex);
+  const presetPkg = __non_webpack_require__(path.join(pkgPath, "package.json"));
+  logger.silly(
+    `Read package.json contents: ${JSON.stringify(pkgPath, null, 2)}`
+  );
+
+  const presetIndex = path.join(pkgPath, presetPkg.main || "index.js");
+  logger.silly(`Resolved index at: ${presetIndex}`);
+
+  // Check for ES6/CommonJS module format
+  const ret = __non_webpack_require__(presetIndex);
+  if (ret.default) return ret.default;
+  return ret;
 }
 
 /**
@@ -290,14 +301,40 @@ function validateOptions(preset: Preset, config: SomeRuntimeConfig) {
 
       // Warn for mismatching value
       if (opt.schema && cfgValue != null) {
-        const validate = ajv.compile(opt.schema);
-        const valid = validate(cfgValue);
-        if (!valid) {
-          isCritical = true;
-          for (const err of validate.errors!) {
-            logger.error(
-              `Validation error on option '${key}': ${err.schemaPath}: ${err.message}`
+        const schemaArr: ReadonlyArray<SomeJTDSchemaType> = Array.isArray(
+          opt.schema
+        )
+          ? opt.schema
+          : [opt.schema];
+
+        for (let i = 0, l = schemaArr.length; i < l; ++i) {
+          const schema = schemaArr[i];
+          const validationErrors: string[] = [];
+
+          try {
+            const validate = ajv.compile(schema as any);
+            const valid = validate(cfgValue);
+            if (!valid) {
+              for (const err of validate.errors!) {
+                validationErrors.push(
+                  `Validation error on option '${key}': ${err.schemaPath}: ${err.message}`
+                );
+              }
+            }
+          } catch (e) {
+            throw new TypeError(
+              `Preset schema validation error for option '${key}${
+                l > 1 ? `/#${i}` : ``
+              }': ${e.message || e.toString()}`
             );
+          }
+
+          // If all validations failed, show the warnings
+          if (validationErrors.length == l) {
+            isCritical = true;
+            for (const msg of validationErrors) {
+              logger.error(msg);
+            }
           }
         }
       }
@@ -326,6 +363,9 @@ function getProjectConfig(context: RuntimeContext) {
   // Then load the user config from the relevant sources
   const userConfigBase = getUserConfig(packageJson);
   const userConfig = expandParametricConfig(userConfigBase, context);
+  logger.silly(
+    `Discovered user config: ${JSON.stringify(userConfig, null, 2)}`
+  );
 
   // Figure out which preset to use and load it from file
   const presetName = getPresetName(userConfig, packageJson);
@@ -334,12 +374,19 @@ function getProjectConfig(context: RuntimeContext) {
 
   // Include custom actions int he preset
   const preset = composePreset(packagePreset, userConfig);
+  logger.silly(
+    `Found actions in preset: ${Object.keys(preset.actions || {}).join(", ")}`
+  );
 
   // Create a project config
   const config = new ProjectConfig(preset, context);
 
   // Collect run-time config and validate it
   const runtimeConfig = config.getRuntime(userConfig);
+  logger.silly(
+    `Composed runtime config: ${JSON.stringify(runtimeConfig, null, 2)}`
+  );
+
   config.context.updateConfig(runtimeConfig);
   validateOptions(preset, runtimeConfig);
   return config;

@@ -124,6 +124,8 @@ export class RuntimeContext<
   /**
    * Return section from the run-time configuration
    */
+  getConfig<K extends keyof Config>(name: K): Config[K] | undefined;
+  getConfig<K extends keyof Config>(name: K, defaults: Config[K]): Config[K];
   getConfig<K extends keyof Config>(
     name: K,
     defaults?: Config[K]

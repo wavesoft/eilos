@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import findUp from "findup-sync";
+import Ajv from "ajv/dist/ajv";
 
 import { defaultContextForProject } from "./context";
 import { expandParametricConfig } from "./env";
@@ -10,6 +11,7 @@ import loggerBase from "./logger";
 import type { Action } from "./types/Action";
 import type { Preset } from "./types/Preset";
 import type { UserConfig } from "./types/UserConfig";
+import type { SomeRuntimeConfig } from "./types";
 
 const logger = loggerBase.child({ component: "config" });
 
@@ -256,6 +258,59 @@ function composePreset(packagePreset: Preset, userConfig: UserConfig): Preset {
 }
 
 /**
+ * Validate the values for the options given
+ * @param preset the preset to extract the option configuration from
+ * @param config the evaluated runtime configuration
+ */
+function validateOptions(preset: Preset, config: SomeRuntimeConfig) {
+  let isCritical: boolean = false;
+  const ajv = new Ajv();
+
+  if (preset.options) {
+    for (const key in preset.options) {
+      const opt = preset.options![key];
+      const cfgValue = config[key];
+
+      // Warn for deprecated configuration options used
+      if (opt.deprecated && cfgValue != null) {
+        logger.warn(
+          `Configuration option '${key}' is deprecated: ${opt.deprecated}`
+        );
+        continue;
+      }
+
+      // Warn for not given, required options
+      if (opt.required && cfgValue == null) {
+        logger.error(
+          `Required configuration option '${key}' was not specified`
+        );
+        isCritical = true;
+        continue;
+      }
+
+      // Warn for mismatching value
+      if (opt.schema && cfgValue != null) {
+        const validate = ajv.compile(opt.schema);
+        const valid = validate(cfgValue);
+        if (!valid) {
+          isCritical = true;
+          for (const err of validate.errors!) {
+            logger.error(
+              `Validation error on option '${key}': ${err.schemaPath}: ${err.message}`
+            );
+          }
+        }
+      }
+    }
+  }
+
+  // If we have a critical error, exit
+  if (isCritical) {
+    throw new TypeError(`Cannot continue due to configuration errors`);
+  }
+}
+
+/**
  * Scans through the project files and configuration and creates the
  * overall project configuration that is later used in all of the components.
  * @param context
@@ -283,18 +338,10 @@ function getProjectConfig(context: RuntimeContext) {
   // Create a project config
   const config = new ProjectConfig(preset, context);
 
-  // Collect run-time config and warn for deprecated fields
+  // Collect run-time config and validate it
   const runtimeConfig = config.getRuntime(userConfig);
-  Object.keys(preset.options || {}).forEach((key) => {
-    const opt = preset.options![key];
-    if (opt.deprecated) {
-      logger.warn(
-        `Configuration option '${key}' is deprecated: ${opt.deprecated}`
-      );
-    }
-  });
-
   config.context.updateConfig(runtimeConfig);
+  validateOptions(preset, runtimeConfig);
   return config;
 }
 

@@ -17,6 +17,10 @@ export interface RuntimeConfig {
   argv: (string | number)[];
 }
 
+export type SomeRuntimeConfig = {
+  [K in keyof any]: any;
+};
+
 type OptionDataType<
   T extends SomeJTDSchemaType | ReadonlyArray<SomeJTDSchemaType>
 > = T extends ReadonlyArray<infer A> ? JTDDataType<A> : JTDDataType<T>;

@@ -1,6 +1,6 @@
 {
   "name": "eilos",
-  "version": "1.0.0-rc12",
+  "version": "1.0.0-rc13",
   "description": "Web App Build Abstraction",
   "main": "dist/index.js",
   "types": "dist/src/index.d.ts",

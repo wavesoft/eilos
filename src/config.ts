@@ -246,7 +246,7 @@ function composePreset(packagePreset: Preset, userConfig: UserConfig): Preset {
 
   // Make sure all the required fields are present
   if (!preset.actions) preset.actions = {};
-  if (!preset.options) preset.options = {};
+  if (!preset.config) preset.config = {};
 
   // If we have custom actions from the user, bring them in
   if (userConfig.eilosActions) {
@@ -277,9 +277,9 @@ function validateOptions(preset: Preset, config: SomeRuntimeConfig) {
   let isCritical: boolean = false;
   const ajv = new Ajv();
 
-  if (preset.options) {
-    for (const key in preset.options) {
-      const opt = preset.options![key];
+  if (preset.config.options) {
+    for (const key in preset.config.options) {
+      const opt = preset.config.options![key];
       const cfgValue = config[key];
 
       // Warn for deprecated configuration options used

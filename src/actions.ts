@@ -3,7 +3,7 @@ import util from "util";
 import rimrafSync from "rimraf";
 
 import loggerBase from "./logger";
-import { createAllActionFiles } from "./files";
+import { createAllActionFiles } from "./utils/FileUtil";
 import { RuntimeContext } from "./struct/RuntimeContext";
 import { ProjectConfig } from "./struct/ProjectConfig";
 import type { Preset } from "./types/Preset";
@@ -41,6 +41,7 @@ function ensureBuildDir(ctx: RuntimeContext): Promise<boolean> {
 
 const defaultPreset: Preset = {
   engineVersion: packageConfig.version,
+  config: {},
   actions: {
     build: {
       run: (ctx: RuntimeContext) => {
@@ -82,7 +83,7 @@ export function invokeAction(project: ProjectConfig, actionName: string) {
 
   // Ensure the build dir is correclty populated
   chain.push(() => Promise.resolve(ensureBuildDir(ctx)));
-  chain.push(() => createAllActionFiles(ctx, action, actionName));
+  chain.push(() => createAllActionFiles(project, actionName));
 
   // Start the action sequencing
   if (preAction) chain.push(() => Promise.resolve(preAction(ctx)));

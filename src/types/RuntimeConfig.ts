@@ -1,6 +1,6 @@
 import type { JTDDataType } from "ajv/dist/types/jtd-schema";
 import type { SomeJTDSchemaType } from "ajv/dist/types/jtd-schema";
-import type { PresetOptions } from "./Preset";
+import type { PresetOptions } from "./PresetOption";
 
 /**
  * Holds the definition of the run-time configuration parameters

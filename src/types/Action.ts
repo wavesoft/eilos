@@ -1,56 +1,34 @@
-import type { ConfigFile } from "./ConfigFile";
-import type { RuntimeContext } from "../struct/RuntimeContext";
-import type { PresetOptions } from "./Preset";
+import type { ActionArguments, ArgumentsType } from "./ActionArgument";
+import type { ConfigFile, ConfigFiles } from "./ConfigFile";
+import type { PresetOptions } from "./PresetOption";
 import type { PresetRuntimeConfig } from "./RuntimeConfig";
-
-export interface ActionArgument {
-  type?: "string" | "number" | "boolean";
-
-  positional?: boolean;
-  defaultValue?: any;
-  description?: string;
-  required?: boolean;
-  short?: string;
-}
-
-export interface ActionArguments {
-  [K: string]: ActionArgument;
-}
-
-export type SomeActionArguments = Record<string, ActionArgument>;
-
-type ArgumentType<A extends ActionArgument> = A extends {
-  type: "string";
-}
-  ? string
-  : A extends { type: "number" }
-  ? number
-  : A extends { type: "boolean" }
-  ? boolean
-  : never;
-
-export type ArgumentsType<A extends ActionArguments> = {
-  [K in keyof A]: A[K] extends { required: true }
-    ? ArgumentType<A[K]>
-    : ArgumentType<A[K]> | undefined;
-};
+import type { RuntimeContext } from "../struct/RuntimeContext";
 
 /**
- * Function signature for all the .runXXX methods
+ * Function signature for all the .runXXX() methods
  */
 export type ActionHandler<
-  Opts extends PresetOptions = PresetOptions,
-  Args extends ActionArguments = ActionArguments
+  Opt extends PresetOptions = PresetOptions,
+  Args extends ActionArguments = ActionArguments,
+  Files extends ConfigFiles<PresetRuntimeConfig<Opt>, Args> = ConfigFiles<
+    PresetRuntimeConfig<Opt>,
+    Args
+  >
 > = (
-  ctx: RuntimeContext<PresetRuntimeConfig<Opts>, ArgumentsType<Args>>
+  ctx: RuntimeContext<PresetRuntimeConfig<Opt>, Args, Files>
 ) => Promise<any>;
 
 /**
- * An action definition interface
+ * The preset action definition interface
  */
 export interface Action<
-  Opts extends PresetOptions = PresetOptions,
-  Args extends ActionArguments = ActionArguments
+  Opt extends PresetOptions = PresetOptions,
+  Args extends ActionArguments = ActionArguments,
+  BaseFiles extends ConfigFiles<PresetRuntimeConfig<Opt>, Args> = {},
+  ActionFiles extends Record<
+    string,
+    ConfigFile<PresetRuntimeConfig<Opt>, Args, BaseFiles>
+  > = {}
 > {
   /**
    * An optional description for this action
@@ -63,18 +41,15 @@ export interface Action<
    * For example:
    * ```
    *  arguments: {
-   *    positional: [
-   *      { name: "filename" },
-   *      ...
-   *    ],
-   *    flag: [
-   *      { name: "debug", short: "D" },
-   *      ...
-   *    ],
-   *    named: [
-   *      { name: "input", required: true },
-   *      ...
-   *    ]
+   *    filename: {
+   *      positional: true,
+   *      type: "string",
+   *      description: "The file name to build"
+   *    },
+   *    verbose: {
+   *      type: "boolean",
+   *      description: "Show details about what's happening"
+   *    }
    *  }
    * ```
    */
@@ -92,23 +67,20 @@ export interface Action<
    * In this case, a proxy `.js` file is generated that will forward the
    * request to the file contents generator at run-time
    */
-  files?: Record<
-    string,
-    ConfigFile<PresetRuntimeConfig<Opts>, ArgumentsType<Args>>
-  >;
+  files?: ActionFiles;
 
   /**
    * Action handler before the action is executed
    */
-  preRun?: ActionHandler<Opts, Args>;
+  preRun?: ActionHandler<Opt, Args, BaseFiles>;
 
   /**
    * Action handler
    */
-  run?: ActionHandler<Opts, Args>;
+  run?: ActionHandler<Opt, Args, BaseFiles>;
 
   /**
    * Action handler before the action is executed
    */
-  postRun?: ActionHandler<Opts, Args>;
+  postRun?: ActionHandler<Opt, Args, BaseFiles>;
 }

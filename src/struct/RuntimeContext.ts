@@ -1,13 +1,18 @@
 import execa from "execa";
 import merge from "deepmerge";
 import path from "path";
+
 import type { Logger } from "winston";
 
+import { getFileContents } from "../utils/FileUtil";
 import * as config from "../config";
 import loggerBase from "../logger";
-import type { ConfigFile } from "../types/ConfigFile";
+import type {
+  ActionArgumentValues,
+  ArgumentType,
+} from "../types/ActionArgument";
+import type { ConfigFile, ConfigFiles } from "../types/ConfigFile";
 import type { RuntimeConfig } from "../types/RuntimeConfig";
-import { ActionArguments } from "../types/Action";
 
 const logger = loggerBase.child({ component: "conntext" });
 
@@ -32,7 +37,12 @@ export interface RuntimeContextUtil {
  */
 export class RuntimeContext<
   Config extends RuntimeConfig = RuntimeConfig,
-  Args extends Object = {}
+  Args extends ActionArgumentValues = {},
+  Files extends ConfigFiles<Config, Args> = ConfigFiles<
+    Config,
+    Args,
+    { [K: string]: any }
+  >
 > {
   readonly util: RuntimeContextUtil;
   readonly logger: Logger;
@@ -51,7 +61,7 @@ export class RuntimeContext<
     this._env = env;
     this._dir = dir;
     this._config = {} as Config;
-    this._config_files = {};
+    this._config_files = {} as Record<string, ConfigFile | null>;
     this._args = {} as Args;
     this.logger = logger;
   }
@@ -90,7 +100,12 @@ export class RuntimeContext<
    * @param name the name of the argument
    * @param defaultValue the default value if the argument is missing
    */
-  getArg<A extends keyof Args>(name: A, defaultValue?: Args[A]): any {
+  getArg<A extends keyof Args>(name: A): ArgumentType<Args[A]> | undefined;
+  getArg<A extends keyof Args>(name: A, defaultValue?: Args[A]): Args[A];
+  getArg<A extends keyof Args>(
+    name: A,
+    defaultValue?: Args[A]
+  ): Args[A] | undefined {
     return this._args[name] == null ? defaultValue : this._args[name];
   }
 
@@ -124,8 +139,11 @@ export class RuntimeContext<
   /**
    * Return section from the run-time configuration
    */
-  getConfig<K extends keyof Config>(name: K): Config[K] | undefined;
-  getConfig<K extends keyof Config>(name: K, defaults: Config[K]): Config[K];
+  getConfig<K extends keyof Config>(name: K): Config[K];
+  getConfig<K extends keyof Config>(
+    name: K,
+    defaults: Config[K]
+  ): Exclude<Config[K], undefined>;
   getConfig<K extends keyof Config>(
     name: K,
     defaults?: Config[K]
@@ -142,11 +160,35 @@ export class RuntimeContext<
    * Returns the full path to the configuration file from within the config folder
    * @param name
    */
-  getConfigFilePath(name: string): string {
-    if (this._config_files[name] == null) {
-      this._config_files[name] = null;
+  getConfigFilePath<K extends keyof Files>(name: K): string {
+    if (this._config_files[name as string] == null) {
+      // Mark this as `null` indicating that there was a request to process
+      // that file, but the file was actually missing.
+      this._config_files[name as string] = null;
     }
-    return path.join(this.getDirectory("dist.config"), name);
+    return path.join(this.getDirectory("dist.config"), name.toString());
+  }
+
+  /**
+   * Returns the configuration object for definiting
+   * @param name
+   */
+  getConfigFileDefinition<K extends keyof Files>(name: K): ConfigFile {
+    const ret = this._config_files[name as string];
+    if (!ret) {
+      throw new TypeError(`Configuration file '${name}' was not defined`);
+    }
+    return ret;
+  }
+
+  /**
+   * Returns the rendered contents of the specified config file
+   * @param name
+   */
+  getConfigFileContents<K extends keyof Files>(name: K): Promise<Buffer> {
+    const fileDef = this.getConfigFileDefinition(name);
+    const fileName = this.getConfigFilePath(name);
+    return getFileContents(this, fileDef, fileName);
   }
 
   /**
@@ -154,8 +196,8 @@ export class RuntimeContext<
    * @param name
    * @param contents
    */
-  addConfigFile(name: string, contents: ConfigFile): void {
-    this._config_files[name] = contents;
+  setConfigFile<K extends keyof Files>(name: K, contents: ConfigFile): void {
+    this._config_files[name as string] = contents;
   }
 
   /**

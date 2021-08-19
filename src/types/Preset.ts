@@ -1,56 +1,28 @@
-import type { Action, ActionArguments } from "./Action";
-import type { SomeJTDSchemaType } from "ajv/dist/types/jtd-schema";
+import type { Action } from "./Action";
+import type { ActionArguments } from "./ActionArgument";
+import type { ConfigFiles } from "./ConfigFile";
+import type { PresetConfig } from "./PresetConfig";
+import type { PresetRuntimeConfig } from "./RuntimeConfig";
+import type { PresetOptions } from "./PresetOption";
 
-/**
- * Configuration parameters for a preset option
- */
-export interface PresetOption {
-  /**
-   * The value to use when the user hasn't provided a value
-   */
-  defaultValue?: any;
-
-  /**
-   * Set to a message to display when the user tries to use this value
-   */
-  deprecated?: string;
-
-  /**
-   * The user-friendly description for the value
-   */
-  description?: string;
-
-  /**
-   * Require this value to be given
-   */
-  required?: boolean;
-
-  /**
-   * An optional JTD schema to use for validating the user value
-   *
-   * If you want to validate different types for the same value (eg. union)
-   * you can use an array of different scehmas.
-   */
-  schema?: SomeJTDSchemaType | ReadonlyArray<SomeJTDSchemaType>;
-}
-
-export interface PresetOptions {
-  [K: string]: PresetOption;
-}
-
-export interface PresetActions<
-  O extends PresetOptions = PresetOptions,
-  Args extends ActionArguments = ActionArguments
-> {
-  [K: string]: Action<O, Args>;
-}
+export type PresetActions<
+  Opt extends PresetOptions = PresetOptions,
+  Args extends ActionArguments = ActionArguments,
+  Files extends ConfigFiles<PresetRuntimeConfig<Opt>, Args> = ConfigFiles<
+    PresetRuntimeConfig<Opt>,
+    Args
+  >
+> = Record<string, Action<Opt, Args, Files>>;
 
 /**
  * Preset definition
  */
 export interface Preset<
-  Options extends PresetOptions = PresetOptions,
-  Actions extends PresetActions<Options> = PresetActions<Options>
+  Opt extends PresetOptions = PresetOptions,
+  Files extends ConfigFiles<PresetRuntimeConfig<Opt>> = ConfigFiles<
+    PresetRuntimeConfig<Opt>
+  >,
+  Actions extends PresetActions<Opt> = PresetActions<Opt>
 > {
   /**
    * The minimum required engine version
@@ -58,15 +30,12 @@ export interface Preset<
   engineVersion: string;
 
   /**
+   * The preset configuration settings
+   */
+  config: PresetConfig<Opt, Files>;
+
+  /**
    * The definition of actions exposed by this preset
    */
   actions?: Actions;
-
-  /**
-   * The tunable options required by this preset
-   *
-   * These options will be read from the user's eilos configuration
-   * source and are handled internally by the actions.
-   */
-  options?: Options;
 }

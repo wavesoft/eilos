@@ -1,0 +1,107 @@
+import fs from "fs";
+import path from "path";
+import util from "util";
+
+import { getEliosModulePath } from "../config";
+import loggerBase from "../logger";
+import type { ConfigFile, ConfigFileContents } from "../types/ConfigFile";
+import type { ProjectConfig } from "../struct/ProjectConfig";
+import type { RuntimeContext } from "../struct/RuntimeContext";
+
+const fsWriteFile = util.promisify(fs.writeFile);
+const fsExists = util.promisify(fs.exists);
+const fsMkdir = util.promisify(fs.mkdir);
+const logger = loggerBase.child({ component: "files" });
+
+/**
+ * Returns the file contents as binary buffer
+ * @param c the file contents to process
+ * @returns the resulting buffer
+ */
+export function getContentsBuffer(c: ConfigFileContents): Buffer {
+  if (c instanceof Buffer) {
+    return c;
+  } else if (typeof c === "object") {
+    return Buffer.from(JSON.stringify(c, null, 2), "utf-8");
+  } else {
+    return Buffer.from(c, "utf-8");
+  }
+}
+
+/**
+ * Renders the given config file on a buffer
+ * @param file the file to render
+ */
+export async function getFileContents(
+  ctx: RuntimeContext,
+  file: ConfigFile<any, any>,
+  fileName: string,
+  actionName?: string
+): Promise<Buffer> {
+  // If we have a generator, the contents can either be static or dynamic
+  if ("generator" in file) {
+    if (file.mimeType === "application/javascript" && actionName) {
+      const modulePath = getEliosModulePath();
+      logger.silly(
+        `Creating wrapper function for file '${fileName}' -> ` +
+          `${modulePath} invokeFileFunction("${actionName}", "${fileName}")`
+      );
+
+      // When rendering js contents, create a wrapper function
+      const contents = [
+        `const eilos = require(${JSON.stringify(modulePath)});`,
+        "module.exports = eilos.invokeFileFunction(",
+        `   ${JSON.stringify(actionName)},`,
+        `   ${JSON.stringify(fileName)}`,
+        ");",
+      ].join("\n");
+      return getContentsBuffer(contents);
+    } else {
+      logger.silly(`Using generator for file '${fileName}'`);
+      // When rendering non-js contents just process the buffer
+      const data = await file.generator(ctx);
+      return getContentsBuffer(data);
+    }
+  }
+
+  // Otherwise return the buffer
+  logger.silly(`Using buffered contents for file '${fileName}'`);
+  return getContentsBuffer(file.contents);
+}
+
+/**
+ * Creates all the build files required for the action
+ */
+export function createAllActionFiles(
+  project: ProjectConfig,
+  actionName: string
+) {
+  const ctx = project.context;
+  const files = project.getAllFiles(actionName);
+
+  return Promise.all(
+    Object.keys(files).map(async (fileName) => {
+      // Compute the destination for the file
+      const writeTo = ctx.getConfigFilePath(fileName);
+      const writeToDir = path.dirname(writeTo);
+
+      // Make sure directory exists
+      const dirExists = await fsExists(writeToDir);
+      if (!dirExists) {
+        logger.debug(`Creating missing directory ${writeToDir}`);
+        await fsMkdir(writeToDir, { recursive: true }).then(() => true);
+      }
+
+      // Collect file contents
+      const contents = await getFileContents(
+        ctx,
+        files[fileName],
+        fileName,
+        actionName
+      );
+
+      logger.debug(`Writing file ${writeTo}'`);
+      await fsWriteFile(writeTo, contents.toString());
+    })
+  );
+}

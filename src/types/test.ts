@@ -1,29 +1,41 @@
-import { DefineAction, DefinePreset, DefinePresetConfig } from "./Factories";
-import { PresetRuntimeContext } from "./PresetRuntimeContext";
+import {
+  DefineAction,
+  DefinePresetOptions,
+  DefinePreset,
+  DefinePresetConfig,
+  DefinePresetFile,
+} from "./Factories";
 
-const cfg = DefinePresetConfig({
-  options: {
-    name: {
-      schema: {
-        type: "string",
-      },
-    },
-    thingieMagic: {
-      schema: {
-        type: "int32",
-      },
+const cfgOpt1 = DefinePresetOptions({
+  name: {
+    schema: {
+      type: "string",
     },
   },
+  thingieMagic: {
+    schema: {
+      type: "int32",
+    },
+  },
+});
 
+const cfgIndexJs = DefinePresetFile(cfgOpt1, {
+  generator: (ctx) => {
+    return "";
+  },
+});
+
+const cfgFooJs = DefinePresetFile(cfgOpt1, {
+  generator: (ctx) => {
+    return "";
+  },
+});
+
+const cfg = DefinePresetConfig({
+  options: cfgOpt1,
   files: {
-    "index.js": {
-      generator: (ctx) => {
-        return "";
-      },
-    },
-    "foo.json": {
-      contents: "",
-    },
+    "index.js": cfgIndexJs,
+    "foo.json": cfgFooJs,
   },
 });
 

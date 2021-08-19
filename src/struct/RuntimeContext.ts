@@ -52,6 +52,7 @@ export class RuntimeContext<
   private _dir: Record<string, string>;
   private _config: Config;
   private _config_files: Record<string, ConfigFile | null>;
+  private _usedFiles: Set<string>;
 
   constructor(env: Record<string, string>, dir: Record<string, string>) {
     this.util = {
@@ -63,6 +64,7 @@ export class RuntimeContext<
     this._config = {} as Config;
     this._config_files = {} as Record<string, ConfigFile | null>;
     this._args = {} as Args;
+    this._usedFiles = new Set();
     this.logger = logger;
   }
 
@@ -161,6 +163,7 @@ export class RuntimeContext<
    * @param name
    */
   getConfigFilePath<K extends keyof Files>(name: K): string {
+    this._usedFiles.add(name as string);
     if (this._config_files[name as string] == null) {
       // Mark this as `null` indicating that there was a request to process
       // that file, but the file was actually missing.
@@ -174,6 +177,7 @@ export class RuntimeContext<
    * @param name
    */
   getConfigFileDefinition<K extends keyof Files>(name: K): ConfigFile {
+    this._usedFiles.add(name as string);
     const ret = this._config_files[name as string];
     if (!ret) {
       throw new TypeError(`Configuration file '${name}' was not defined`);
@@ -186,9 +190,18 @@ export class RuntimeContext<
    * @param name
    */
   getConfigFileContents<K extends keyof Files>(name: K): Promise<Buffer> {
+    this._usedFiles.add(name as string);
     const fileDef = this.getConfigFileDefinition(name);
     const fileName = this.getConfigFilePath(name);
     return getFileContents(this, fileDef, fileName);
+  }
+
+  /**
+   * Returns all the file names used currently in the context
+   * @returns an array of file names
+   */
+  getUsedConfigFiles(): string[] {
+    return Array.from(this._usedFiles);
   }
 
   /**

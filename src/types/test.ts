@@ -46,6 +46,7 @@ const action = DefineAction(cfg, {
       required: true,
     },
   },
+  useFiles: ["foo.json"],
   files: {
     "fafun.js": {
       generator: (ctx, prev) => {

@@ -103,8 +103,11 @@ function getUserConfigFrom(path: string): UserConfig | null {
  */
 function getUserConfigFromEilosFile(): UserConfig | null {
   const foundJson = findUp(".eilos.json", {});
-  const foundJs = findUp(".eilos.json", {});
+  const foundJs = findUp(".eilos.js", {});
   const userFile = foundJson || foundJs;
+
+  logger.silly(`Found .eilos.json at ${foundJson}`)
+  logger.silly(`Found .eilos.js at ${foundJs}`)
 
   if (userFile) {
     return getUserConfigFrom(userFile);

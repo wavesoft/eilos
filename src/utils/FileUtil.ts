@@ -86,7 +86,7 @@ export function createAllActionFiles(
       const writeToDir = path.dirname(writeTo);
 
       // Make sure directory exists
-      const dirExists = await fsExists(writeToDir);
+      const dirExists = fs.existsSync(writeToDir);
       if (!dirExists) {
         logger.debug(`Creating missing directory ${writeToDir}`);
         await fsMkdir(writeToDir, { recursive: true }).then(() => true);

@@ -56,16 +56,21 @@ export interface Action<
   arguments?: Args;
 
   /**
+   * One or more files to use from the global context
+   */
+  useFiles?: Array<keyof BaseFiles>;
+
+  /**
    * One or more files associated with this action
    *
-   * The configuration file name will also be the name of the file
-   * that will be saved on disk.
+   * Just like the files reated in the global scope, you can define
+   * either the contents or a generator function that will produce the
+   * contents.
    *
-   * The file is normally saved with it's contents, with the exception
-   * of when the file extension is '.js' and an object is returned.
-   *
-   * In this case, a proxy `.js` file is generated that will forward the
-   * request to the file contents generator at run-time
+   * In contrast to global files that needs to be explicitly
+   * imported using the `useFiles` statement, *ANY* file defined
+   * in the `files` section is implicitly used when the action
+   * is used.
    */
   files?: ActionFiles;
 

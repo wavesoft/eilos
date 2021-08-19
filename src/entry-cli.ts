@@ -26,9 +26,10 @@ export function cli(argv: string[]) {
     }
 
     // Initialize CLI
-    const cli = config.getActions().reduce(
-      (cli, action) => {
-        logger.debug(`Registering action ${action.name}`);
+    const cli = config.getActionNames().reduce(
+      (cli, actionName) => {
+        const action = config.getAction(actionName);
+        logger.debug(`Registering action ${actionName}`);
 
         const positionalExpr =
           " " +
@@ -43,9 +44,9 @@ export function cli(argv: string[]) {
             .join(" ");
 
         return cli.command(
-          `${action.name}${positionalExpr.trim()}`,
+          `${actionName}${positionalExpr.trim()}`,
           action.description ||
-            `Runs the '${action.name}' action from the preset`,
+            `Runs the '${actionName}' action from the preset`,
           (yargs) => {
             // Process the positional arguments
             const args = Object.keys(action.arguments || {}).reduce(
@@ -77,12 +78,12 @@ export function cli(argv: string[]) {
             config.context.updateArgs(argv);
 
             // Call-out to the profile action implementation
-            invokeAction(config, action.name)
+            invokeAction(config, actionName)
               .then((_) => {
-                logger.info(`🏋️‍♀️  ${action.name} step completed`);
+                logger.info(`🏋️‍♀️  ${actionName} step completed`);
               })
               .catch((err) => {
-                logger.error(`🏋️‍♀️  ${action.name} step failed: ${err}`);
+                logger.error(`🏋️‍♀️  ${actionName} step failed: ${err}`);
                 process.exit(1);
               });
           }

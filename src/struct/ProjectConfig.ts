@@ -7,6 +7,9 @@ import type { RuntimeContext } from "./RuntimeContext";
 import type { UserConfig } from "../types/UserConfig";
 
 import { mergeFiles } from "../utils/DefinitionUtil";
+import loggerBase from "../logger";
+
+const logger = loggerBase.child({ component: "project" });
 
 /**
  * Helper to aggregate all project configuration
@@ -43,13 +46,8 @@ export class ProjectConfig {
     return ret;
   }
 
-  getActions(): (Action & { name: string })[] {
-    return Object.keys(this.preset.actions || {}).map((key) => {
-      return {
-        ...this.preset.actions![key],
-        name: key,
-      };
-    });
+  getActionNames(): string[] {
+    return Object.keys(this.preset.actions || {});
   }
 
   /**
@@ -90,34 +88,46 @@ export class ProjectConfig {
   }
 
   /**
-   * Returns the definitions for all the files in the project
-   *
-   * If we know the function to be executed, this
-   *
-   * @param action the action to execute
+   * Returns the definitions for all the files needed by the specific action
+   * @param action the action to analyze
    */
-  getAllFiles(action?: string): Record<string, ConfigFile<any, any>> {
-    const baseFiles = this.preset.actions;
-    const actionFiles = action
-      ? this.preset.actions?.[action]?.files
-      : undefined;
+  getActionFiles(action: string): Record<string, ConfigFile<any, any>> {
     const ret: Record<string, ConfigFile<any, any>> = {};
+    const baseFiles = this.preset.config.files || {};
+    const actionFiles = this.preset.actions?.[action]?.files || {};
+    const useFiles = this.preset.actions?.[action]?.useFiles || [];
 
-    // Set base files
-    if (baseFiles) {
-      Object.assign(ret, baseFiles);
+    // Include used files from the global context
+    for (const fileName of useFiles) {
+      const f = baseFiles[fileName];
+      logger.silly(
+        `Using global config file '${fileName}' for action '${action}'`
+      );
+      if (!f) {
+        throw new TypeError(
+          `Configuration file '${fileName}' is required by the '${action}' action, ` +
+            `but it's not defined in the preset configuration`
+        );
+      }
+      ret[fileName] = f;
     }
 
-    // Override/merge with action files
-    if (actionFiles) {
-      for (const fileName in actionFiles) {
-        const baseFile = ret[fileName];
-        const actionFile = (actionFiles as any)[fileName];
-        if (baseFile) {
-          ret[fileName] = mergeFiles(fileName, baseFile, actionFile);
-        } else {
-          ret[fileName] = actionFile;
-        }
+    // Include all the files defined in action files
+    for (const fileName in actionFiles) {
+      const f = (actionFiles as any)[fileName];
+
+      // If this file also exists on base, merge them
+      const bf = baseFiles[fileName];
+      if (bf) {
+        logger.silly(
+          `Using merged global+action-local config file '${fileName}' for action '${action}'`
+        );
+        ret[fileName] = mergeFiles(fileName, bf, f);
+      } else {
+        logger.silly(
+          `Using action-local config file '${fileName}' for action '${action}'`
+        );
+        ret[fileName] = f;
       }
     }
 

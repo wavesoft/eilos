@@ -31,7 +31,7 @@ export function DefinePresetOptions<Opt extends PresetOptions>(opt: Opt): Opt {
  */
 export function DefinePresetFile<Opt extends PresetOptions>(
   options: Opt,
-  cfg: ConfigFile<PresetRuntimeConfig<Opt>, {}, {}>
+  cfg: ConfigFile<PresetRuntimeConfig<Opt>, {}, Record<string, ConfigFile>>
 ): ConfigFile<PresetRuntimeConfig<Opt>, {}, {}> {
   return cfg;
 }

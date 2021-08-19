@@ -77,7 +77,7 @@ export function createAllActionFiles(
   actionName: string
 ) {
   const ctx = project.context;
-  const files = project.getAllFiles(actionName);
+  const files = project.getActionFiles(actionName);
 
   return Promise.all(
     Object.keys(files).map(async (fileName) => {

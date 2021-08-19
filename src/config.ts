@@ -11,7 +11,7 @@ import { RuntimeContext } from "./struct/RuntimeContext";
 import loggerBase from "./logger";
 import type { Action } from "./types/Action";
 import type { Preset } from "./types/Preset";
-import type { UserConfig } from "./types/UserConfig";
+import type { SomeUserConfig } from "./types/UserConfig";
 import type { SomeRuntimeConfig } from "./types";
 
 const logger = loggerBase.child({ component: "config" });
@@ -74,7 +74,7 @@ function getBuildPath(): string {
 /**
  * Returns the engine configuration from the given file
  */
-function getUserConfigFrom(path: string): UserConfig | null {
+function getUserConfigFrom(path: string): SomeUserConfig | null {
   try {
     const conf = __non_webpack_require__(path);
     const confType = typeof conf;
@@ -85,7 +85,7 @@ function getUserConfigFrom(path: string): UserConfig | null {
       );
     }
     logger.debug(`Loaded user configuration from ${path}`);
-    return conf as UserConfig;
+    return conf as SomeUserConfig;
   } catch (err) {
     throw new Error(
       "Could not process eilos configuration: " +
@@ -101,13 +101,13 @@ function getUserConfigFrom(path: string): UserConfig | null {
  *
  * @returns {Object}
  */
-function getUserConfigFromEilosFile(): UserConfig | null {
+function getUserConfigFromEilosFile(): SomeUserConfig | null {
   const foundJson = findUp(".eilos.json", {});
   const foundJs = findUp(".eilos.js", {});
   const userFile = foundJson || foundJs;
 
-  logger.silly(`Found .eilos.json at ${foundJson}`)
-  logger.silly(`Found .eilos.js at ${foundJs}`)
+  logger.silly(`Found .eilos.json at ${foundJson}`);
+  logger.silly(`Found .eilos.js at ${foundJs}`);
 
   if (userFile) {
     return getUserConfigFrom(userFile);
@@ -119,9 +119,9 @@ function getUserConfigFromEilosFile(): UserConfig | null {
 /**
  * Loads the user configuration from the package.json
  */
-function getUserConfigFromPackage(packageJson: any): UserConfig | null {
+function getUserConfigFromPackage(packageJson: any): SomeUserConfig | null {
   if ("eilos" in packageJson) {
-    return packageJson["eilos"] as UserConfig;
+    return packageJson["eilos"] as SomeUserConfig;
   }
   return null;
 }
@@ -133,7 +133,7 @@ function getUserConfigFromPackage(packageJson: any): UserConfig | null {
  * - The user's `package.json`
  * - The selected preset
  */
-function getUserConfig(packageJson: any): UserConfig {
+function getUserConfig(packageJson: any): SomeUserConfig {
   const userFile = getUserConfigFromEilosFile();
   const userJson = getUserConfigFromPackage(packageJson);
 
@@ -193,7 +193,7 @@ export function resolveFilePath(name: string, searchIn?: string) {
  *
  * @returns {string}
  */
-function getPresetName(userConfig: UserConfig, packageJson: any): string {
+function getPresetName(userConfig: SomeUserConfig, packageJson: any): string {
   // First prefer user-specified configuration
   if (userConfig.eilosPreset) return userConfig.eilosPreset;
 
@@ -244,7 +244,7 @@ function loadPresetFromPackage(presetName: string): Preset {
  * @param packagePreset
  * @param userConfig
  */
-function composePreset(packagePreset: Preset, userConfig: UserConfig): Preset {
+function composePreset(packagePreset: Preset, userConfig: SomeUserConfig): Preset {
   const preset = Object.assign({}, packagePreset); // Shallow copy
 
   // Make sure all the required fields are present
@@ -281,7 +281,11 @@ function validateOptions(preset: Preset, config: SomeRuntimeConfig) {
   const ajv = new Ajv();
 
   if (preset.config.options) {
+    const knownOptions: string[] = [];
+
+    // Validate present options
     for (const key in preset.config.options) {
+      knownOptions.push(key);
       const opt = preset.config.options![key];
       const cfgValue = config[key];
 
@@ -341,6 +345,16 @@ function validateOptions(preset: Preset, config: SomeRuntimeConfig) {
           }
         }
       }
+    }
+
+    // Collect unknown options
+    const unknownOpts: string[] = [];
+    for (const key in config) {
+      if (!knownOptions.includes(key)) unknownOpts.push(key);
+    }
+    if (unknownOpts.length) {
+      logger.error(`Unknown configuration options: ${unknownOpts.join(", ")}`);
+      isCritical = true;
     }
   }
 

@@ -1,5 +1,5 @@
 import type { RuntimeContext } from "./struct/RuntimeContext";
-import type { UserConfig } from "./types/UserConfig";
+import type { SomeUserConfig } from "./types/UserConfig";
 
 export type KeyFilter = (key: string) => boolean;
 
@@ -58,9 +58,9 @@ function expandFunction(
  * @returns the user config, with the values patched
  */
 export function expandParametricConfig(
-  config: UserConfig,
+  config: SomeUserConfig,
   context: RuntimeContext,
   keyFilter: KeyFilter = () => true
-): UserConfig {
+): SomeUserConfig {
   return expandFunction(config, context, keyFilter);
 }

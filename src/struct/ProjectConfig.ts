@@ -4,7 +4,7 @@ import type { Preset } from "../types/Preset";
 import type { PresetOptions } from "../types/PresetOption";
 import type { PresetRuntimeConfig } from "../types/RuntimeConfig";
 import type { RuntimeContext } from "./RuntimeContext";
-import type { UserConfig } from "../types/UserConfig";
+import type { SomeUserConfig } from "../types/UserConfig";
 
 import { mergeFiles } from "../utils/DefinitionUtil";
 import loggerBase from "../logger";
@@ -24,7 +24,7 @@ export class ProjectConfig {
   }
 
   getRuntime<O extends PresetOptions>(
-    user: UserConfig
+    user: SomeUserConfig
   ): PresetRuntimeConfig<O> {
     const ret: any = {};
 

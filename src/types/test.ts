@@ -5,6 +5,7 @@ import {
   DefinePresetConfig,
   DefinePresetFile,
 } from "./Factories";
+import { PresetUserConfig } from "./PresetUserConfig";
 
 const cfgOpt1 = DefinePresetOptions({
   name: {
@@ -284,3 +285,10 @@ export const Config = DefinePresetConfig({
 });
 
 ///
+
+
+let user: PresetUserConfig<typeof Config> = {};
+
+user.externals = [
+  "foo"
+]

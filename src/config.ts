@@ -403,12 +403,12 @@ function getProjectConfig(context: RuntimeContext) {
 
   // Validate preset semver
   logger.silly(
-    `Cehcking if engine verion ${packageJson.version} satisfies requierement of ${preset.engineVersion}`
+    `Cehcking if engine verion ${packageConfig.version} satisfies requierement of ${preset.engineVersion}`
   );
   const presetEngineVersion = preset.engineVersion || "0.9";
-  if (!semver.satisfies(packageJson.version, presetEngineVersion)) {
+  if (!semver.satisfies(packageConfig.version, presetEngineVersion)) {
     throw new TypeError(
-      `Eilos version (${packageJson.version}) is not compatible with the version required by the preset: ${preset.engineVersion}`
+      `Eilos version (${packageConfig.version}) is not compatible with the version required by the preset: ${preset.engineVersion}`
     );
   }
 

@@ -548,3 +548,106 @@ yarn build
 ```
 
 When you are about to publish your preset on `npm`, it will now automatically build th production version of your build.
+
+---
+
+# 3. Extending Presets
+
+`eilos` is designed in a way to allow simple extension of an existing preset.
+
+When extending a preset you should follow the same process as the one described above. However this time you must specify the base components you want to override.
+
+## 3.1. Create an Extended Config
+
+Before you can do anything else you must create your own extension of the preset configuration.
+
+To do so, you must first import the configuration of the preset you are extended. This means in your `src/config.ts` you must do:
+
+```ts
+// ...
+
+// (1) Import the config from preset you are extending
+import { Config } from "eilos-preset-typescript";
+
+// (2) Modify the `DefinePresetConfig` to extend from this config
+export const Config = DefinePresetConfig(Config, {
+  // ...
+});
+```
+
+## 3.2. Provide File Overrides
+
+When the same file is defined in both presets, `eilos` will try to combine them and if not possible it will just use the overriden version of the file.
+
+To customize this behaviour you can specify the `combine` strategy. For example in your overriden `src/webpack.config.ts`
+
+```ts
+const file = DefinePresetFile(Options, {
+  // (1) Specify the strategy to use when combining:
+  //     - `concat` will append text blobs and merge JSON definitions
+  //     - `replace` will keep only the new contents 
+  combine: "concat",
+
+  // ...
+});
+```
+
+### 3.2.1. Advanced File Overrides
+
+If you want full control over the merge process you can use a generator in addition to the `combine: "concat"` setting.
+
+When using a generator, the previous contents of the file are given in the second argument:
+
+
+```ts
+const file = DefinePresetFile(Options, {
+  // ...
+
+combine: "concat",
+  generator: (ctx, prev) => {
+    const { merge } = ctx.util;
+
+    // The `prev` variable holds the contents of the previous file that
+    // we are replacing.
+
+    // (You are free to perform any kind of manipulations on the contents
+    //  of the file)
+
+    return merge(prev, {
+      entry: `../${prev.entry}`
+    };
+  }
+});
+```
+
+## 3.3. Provide Action Overrides
+
+Actions are defined exactly like before and they are executed in the order they were defined. This means that if there are two `build` actions, both the base AND your overriden `build` action will be executed.
+
+If you want to execute something before or after the base action implementation you can define the `preRun` or `postRun` handlers:
+
+```ts
+const Action = DefineAction(Config, {
+  preRun: (ctx) => {
+    // ...
+  },
+
+  postRun: (ctx) => {
+    // ...
+  },
+});
+```
+
+## 3.4. Create an Extended Entry Point
+
+Just like the configuration options you must extend the preset entry point with the entry point of the previous preset:
+
+```ts
+// (1) Import the preset we are extending
+import Preset from "eilos-preset-typescript";
+
+// (2) Extend our preset using the base one
+const Preset = DefinePreset(Preset, {
+  // ...
+});
+```

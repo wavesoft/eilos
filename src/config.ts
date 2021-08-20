@@ -3,6 +3,7 @@ import path from "path";
 import findUp from "findup-sync";
 import Ajv from "ajv/dist/jtd";
 import type { SomeJTDSchemaType } from "ajv/dist/types/jtd-schema";
+import semver from "semver";
 
 import { defaultContextForProject } from "./context";
 import { expandParametricConfig } from "./env";
@@ -13,6 +14,8 @@ import type { Action } from "./types/Action";
 import type { Preset } from "./types/Preset";
 import type { SomeUserConfig } from "./types/UserConfig";
 import type { SomeRuntimeConfig } from "./types";
+
+import packageConfig from "../package.json";
 
 const logger = loggerBase.child({ component: "config" });
 
@@ -244,7 +247,10 @@ function loadPresetFromPackage(presetName: string): Preset {
  * @param packagePreset
  * @param userConfig
  */
-function composePreset(packagePreset: Preset, userConfig: SomeUserConfig): Preset {
+function composePreset(
+  packagePreset: Preset,
+  userConfig: SomeUserConfig
+): Preset {
   const preset = Object.assign({}, packagePreset); // Shallow copy
 
   // Make sure all the required fields are present
@@ -394,6 +400,17 @@ function getProjectConfig(context: RuntimeContext) {
   logger.silly(
     `Found actions in preset: ${Object.keys(preset.actions || {}).join(", ")}`
   );
+
+  // Validate preset semver
+  logger.silly(
+    `Cehcking if engine verion ${packageJson.version} satisfies requierement of ${preset.engineVersion}`
+  );
+  const presetEngineVersion = preset.engineVersion || "0.9";
+  if (!semver.satisfies(packageJson.version, presetEngineVersion)) {
+    throw new TypeError(
+      `Eilos version (${packageJson.version}) is not compatible with the version required by the preset: ${preset.engineVersion}`
+    );
+  }
 
   // Create a project config
   const config = new ProjectConfig(preset, context);

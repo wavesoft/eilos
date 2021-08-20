@@ -58,7 +58,14 @@ You can learn more about the presets following this tutorial.
 
 ## 2.1. Create an empty project
 
-There is currently no default build configuraiton available for creating a perset. However we are recommending to use webpack.
+> For a quick start, you can start by cloning the default preset repository:
+> 
+> ```
+> git clone --depth 1 https://github.com/wavesoft/eilos-preset-template  eilos-preset-mypreset
+> ```
+>
+
+Alternatively you can follow the steps:
 
 ### 2.1.1. Start an Empty Project
 

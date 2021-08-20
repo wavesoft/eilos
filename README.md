@@ -51,11 +51,16 @@ For example, when using the `eilos-preset-typescript` preset:
 You can override these defaults by providing a `.eilos.js` configuration file:
 
 ```js
+/** @typedef { import('eilos-preset-typescript').UserConfig } UserConfig */
+
+/**
+ * @type {UserConfig}
+ */
 module.exports = {
   // Define the entry point
   entry: "src/index.js",
   // Define thestatic files
-  static: "static",
+  staticSrcDir: "static",
 
   // Manually override specific configuration options for the packages used
   // by the profile (refer to the profile documentation)
@@ -74,3 +79,7 @@ module.exports = {
   }
 }
 ```
+
+## Preset Development
+
+Refer to the [Preset Development Tutorial](./docs/Preset%20Development.md) to learn how to define your own preset.

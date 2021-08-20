@@ -103,5 +103,9 @@ dist
 # TernJS port file
 .tern-port
 
-# OSX Traces
+# Local files
 .DS_Store
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz

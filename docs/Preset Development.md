@@ -197,7 +197,7 @@ export const Options = DefinePresetOptions({
     /**
      * Indicates that the option is required
      */
-    trquired: true;
+    required: true;
 
     /**
      * If specified, the option is considered deprecated and a warning
@@ -247,7 +247,7 @@ Once the options are defined you can start creating files that are used by your 
 
 Typically these are configuration files that will be later passed as arguments to the commands you are going to invoke through thea actions.
 
-Each preset file is typicall placed in the `src/files` directory and similar to the configuration options, we can use the `DefinePresetFile` helper to define them.
+Each preset file is typically placed in the `src/files` directory and similar to the configuration options, we can use the `DefinePresetFile` helper to define them.
 
 For example, let's create a definition for webpack in `src/files/webpack.config.ts`:
 

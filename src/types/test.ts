@@ -51,7 +51,7 @@ const action = DefineAction(cfg, {
   files: {
     "fafun.js": {
       generator: (ctx, prev) => {
-        const v = ctx.getConfig("name");
+        const v = ctx.getOption("name");
         ctx.getConfigFilePath("foo.json");
         return prev || "";
       },

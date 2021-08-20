@@ -92,7 +92,7 @@ export function invokeAction(project: ProjectConfig, actionName: string) {
   if (postDefault) chain.push(() => Promise.resolve(postDefault(ctx)));
 
   // We don't need the config dir after we are done unless we are running in debug mode
-  if (!ctx.getConfig("debug", false)) {
+  if (!ctx.getOption("debug", false)) {
     chain.push(() => Promise.resolve(removeConfigDir(ctx)));
   }
 

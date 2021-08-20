@@ -22,7 +22,7 @@ export function cli(argv: string[]) {
     // Load project configuration
     const config = getDefaultProjectConfig();
     if (useDebug) {
-      config.context.updateConfig({ debug: true });
+      config.context.updateOptions({ debug: true });
     }
 
     // Initialize CLI
@@ -74,7 +74,7 @@ export function cli(argv: string[]) {
           },
           (argv) => {
             // Pass down arguments to the context
-            config.context.updateConfig({ argv: argv._.slice(1).map(String) });
+            config.context.updateOptions({ argv: argv._.slice(1).map(String) });
             config.context.updateArgs(argv);
 
             // Call-out to the profile action implementation

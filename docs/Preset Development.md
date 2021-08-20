@@ -274,7 +274,7 @@ const file = DefinePresetFile(Options, {
    * the contents of this file dynamically
    */
   generator: (ctx) => {
-    const entryPoint = ctx.getConfig("entryPoint");
+    const entryPoint = ctx.getOption("entryPoint");
 
     // The 'webpack.config.js' contents
     const Contents = {
@@ -306,7 +306,7 @@ This means that even if you use some javascript structure as the contents of the
   mimeType: "text/plain",
   generator: (ctx) => {
     // Any valid text
-    return `[config]\nentryPoint=${ctx.getConfig("entryPoint")}`;
+    return `[config]\nentryPoint=${ctx.getOption("entryPoint")}`;
   }
 }
 ```
@@ -321,7 +321,7 @@ When you are using the `application/json` MIME type, the engine will produce a v
   generator: (ctx) => {
     return {
       // Any valid JSON definition
-      entry: ctx.getConfig("entryPoint")
+      entry: ctx.getOption("entryPoint")
     }
   }
 }
@@ -419,7 +419,7 @@ const Action = DefineAction(Config, {
    */
   run: (ctx) => {
     const cfgFile = ctx.getConfigFilePath("webpack.config.js");
-    const argv = ctx.getConfig("argv", []);
+    const argv = ctx.getOption("argv", []);
 
     // You can use the `ctx.exec` helper to promisify the invocation
     // of a process. Check the 'execa' reference for details:

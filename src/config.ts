@@ -404,7 +404,7 @@ function getProjectConfig(context: RuntimeContext) {
     `Composed runtime config: ${JSON.stringify(runtimeConfig, null, 2)}`
   );
 
-  config.context.updateConfig(runtimeConfig);
+  config.context.updateOptions(runtimeConfig);
   validateOptions(preset, runtimeConfig);
   return config;
 }

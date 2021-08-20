@@ -134,19 +134,19 @@ export class RuntimeContext<
   /**
    * Update run-time configuration
    */
-  updateConfig(obj: Partial<Config>): void {
+  updateOptions(obj: Partial<Config>): void {
     this._config = merge(this._config, obj, { arrayMerge: overwriteMerge });
   }
 
   /**
    * Return section from the run-time configuration
    */
-  getConfig<K extends keyof Config>(name: K): Config[K];
-  getConfig<K extends keyof Config>(
+  getOption<K extends keyof Config>(name: K): Config[K];
+  getOption<K extends keyof Config>(
     name: K,
     defaults: Config[K]
   ): Exclude<Config[K], undefined>;
-  getConfig<K extends keyof Config>(
+  getOption<K extends keyof Config>(
     name: K,
     defaults?: Config[K]
   ): Config[K] | undefined {

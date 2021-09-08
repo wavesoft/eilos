@@ -8,6 +8,7 @@ import type { ConfigFile, ConfigFileContents } from "../types/ConfigFile";
 import type { ProjectConfig } from "../struct/ProjectConfig";
 import type { RuntimeContext } from "../struct/RuntimeContext";
 
+const fsReadFile = util.promisify(fs.readFile);
 const fsWriteFile = util.promisify(fs.writeFile);
 const fsExists = util.promisify(fs.exists);
 const fsMkdir = util.promisify(fs.mkdir);
@@ -38,6 +39,11 @@ export async function getFileContents(
   fileName: string,
   actionName?: string
 ): Promise<Buffer> {
+  // If this is an output file, read it's contents from the disk
+  if ("output" in file) {
+    return fsReadFile(fileName);
+  }
+
   // If we have a generator, the contents can either be static or dynamic
   if ("generator" in file) {
     if (file.mimeType === "application/javascript" && actionName) {

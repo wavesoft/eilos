@@ -57,6 +57,13 @@ export interface StaticConfigFile extends ConfigFileBase {
 }
 
 /**
+ * A configuration file with contents produced by a process
+ */
+export interface OutputConfigFile extends ConfigFileBase {
+  output: true;
+}
+
+/**
  * A configuration file with dynamic contents, computed
  * as a result of a generator function
  */
@@ -78,15 +85,10 @@ export type ConfigFile<
   Config extends RuntimeConfig = RuntimeConfig,
   Args extends Object = {},
   KnownFiles extends ConfigFiles<Config, Args> = {}
-> = StaticConfigFile | GeneratedConfigFile<Config, Args, KnownFiles>;
-
-// /**
-//  * Definition of a preset-generated configuration file
-//  */
-// export type ActionConfigFile<
-//   Config extends RuntimeConfig = RuntimeConfig,
-//   Args extends Object = {}
-// > = ConfigFile<Config, Args> | { emit: true };
+> =
+  | OutputConfigFile
+  | StaticConfigFile
+  | GeneratedConfigFile<Config, Args, KnownFiles>;
 
 /**
  * A shape for multiple preset files

@@ -1,6 +1,6 @@
 import type { Action } from "./Action";
 import type { ActionArguments } from "./ActionArgument";
-import type { ConfigFile, ConfigFiles } from "./ConfigFile";
+import type { ConfigFile, ConfigFileBase, ConfigFiles } from "./ConfigFile";
 import type { Preset, PresetActions } from "./Preset";
 import type { PresetConfig } from "./PresetConfig";
 import type { PresetOptions } from "./PresetOption";
@@ -34,6 +34,20 @@ export function DefinePresetFile<Opt extends PresetOptions>(
   cfg: ConfigFile<PresetRuntimeConfig<Opt>, {}, Record<string, ConfigFile>>
 ): ConfigFile<PresetRuntimeConfig<Opt>, {}, {}> {
   return cfg;
+}
+
+/**
+ * Helepr function to define an output file
+ * @param opt the option definition
+ */
+export function DefinePresetOutputFile<Opt extends PresetOptions>(
+  options: Opt,
+  cfg: ConfigFileBase
+): ConfigFile<PresetRuntimeConfig<Opt>, {}, {}> {
+  return {
+    ...cfg,
+    output: true,
+  };
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////

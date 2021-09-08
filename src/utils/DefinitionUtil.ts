@@ -116,9 +116,28 @@ export function mergeFiles<
 ): ConfigFile<PresetRuntimeConfig<Opts>, ArgumentsType<Args>> {
   const strategy: ConfigFileMergeStrategy = b.combine || "replace";
 
-  if ("generator" in a) {
+  if ("output" in a) {
+    // 'a' is an output file
+    if ("output" in b) {
+      // 'b' is output file
+      return {
+        mimeType: mergeMime(strategy, a.mimeType, b.mimeType),
+        combine: strategy,
+        output: true,
+      };
+    } else if ("generator" in b) {
+      // 'b' is a generator
+      throw new TypeError(`Cannot combine output and input files`);
+    } else {
+      // 'b' holds static contents
+      throw new TypeError(`Cannot combine output and input files`);
+    }
+  } else if ("generator" in a) {
     // 'a' is a generator
-    if ("generator" in b) {
+    if ("output" in b) {
+      // 'b' is output file
+      throw new TypeError(`Cannot combine output and input files`);
+    } else if ("generator" in b) {
       // 'b' is a generator
       return {
         mimeType: mergeMime(strategy, a.mimeType, b.mimeType),
@@ -140,7 +159,10 @@ export function mergeFiles<
     }
   } else {
     // 'a' holds static contents
-    if ("generator" in b) {
+    if ("output" in b) {
+      // 'b' is output file
+      throw new TypeError(`Cannot combine output and input files`);
+    } else if ("generator" in b) {
       // 'b' is a generator
       return {
         mimeType: mergeMime(strategy, a.mimeType, b.mimeType),

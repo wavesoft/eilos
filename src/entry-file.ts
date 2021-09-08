@@ -1,3 +1,4 @@
+import fs from "fs";
 import { getDefaultProjectConfig } from "./config";
 
 /**
@@ -29,6 +30,8 @@ export function invokeFileFunction(actionName: string, fileName: string) {
   // Either call-out to the generator or fetch the contents
   if ("generator" in fileConfig) {
     return fileConfig.generator(project.context);
+  } else if ("output" in fileConfig) {
+    return fs.readFileSync(fileName);
   } else {
     return fileConfig.contents;
   }

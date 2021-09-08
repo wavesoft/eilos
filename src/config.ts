@@ -412,6 +412,14 @@ function getProjectConfig(context: RuntimeContext) {
     );
   }
 
+  // Expose preset file configuration in context
+  if (preset.config.files) {
+    for (const fileName in preset.config.files) {
+      const file = preset.config.files[fileName];
+      context.setConfigFile(fileName, file);
+    }
+  }
+
   // Create a project config
   const config = new ProjectConfig(preset, context);
 

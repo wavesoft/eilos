@@ -53,6 +53,13 @@ export function cli(argv: string[]) {
               (yargs, argName) => {
                 const arg = action.arguments![argName];
                 if (arg.positional) {
+                  logger.silly(
+                    `Registering positional argument ${argName} using config: ${JSON.stringify(
+                      arg,
+                      null,
+                      2
+                    )}`
+                  );
                   return yargs.positional(argName, {
                     demandOption: arg.required,
                     describe: arg.description,
@@ -60,6 +67,13 @@ export function cli(argv: string[]) {
                     type: arg.type || "string",
                   });
                 } else {
+                  logger.silly(
+                    `Registering flag argument ${argName} using config: ${JSON.stringify(
+                      arg,
+                      null,
+                      2
+                    )}`
+                  );
                   return yargs.option(argName, {
                     demandOption: arg.required,
                     describe: arg.description,

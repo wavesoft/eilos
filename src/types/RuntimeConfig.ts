@@ -12,6 +12,11 @@ export interface RuntimeConfig {
   debug: boolean;
 
   /**
+   * The logging level
+   */
+  logLevel: string;
+
+  /**
    * Extra arguments from the command-line
    */
   argv: string[];

@@ -21,15 +21,16 @@ export function cli(argv: string[]) {
 
     // Load project configuration
     const config = getDefaultProjectConfig();
-    if (useDebug) {
+    if (useDebug || useVerboseDebug) {
       config.context.updateOptions({ debug: true });
     }
+    config.context.updateOptions({ logLevel: logger.level });
 
     // Initialize CLI
     const cli = config.getActionNames().reduce(
       (cli, actionName) => {
         const action = config.getAction(actionName);
-        logger.debug(`Registering action ${actionName}`);
+        logger.silly(`Registering action ${actionName}`);
 
         const positionalExpr =
           " " +
@@ -54,7 +55,7 @@ export function cli(argv: string[]) {
                 const arg = action.arguments![argName];
                 if (arg.positional) {
                   logger.silly(
-                    `Registering positional argument ${argName} using config: ${JSON.stringify(
+                    `Registering positional argument '${argName}' using config: ${JSON.stringify(
                       arg,
                       null,
                       2
@@ -68,7 +69,7 @@ export function cli(argv: string[]) {
                   });
                 } else {
                   logger.silly(
-                    `Registering flag argument ${argName} using config: ${JSON.stringify(
+                    `Registering flag argument '${argName}' using config: ${JSON.stringify(
                       arg,
                       null,
                       2
@@ -87,11 +88,16 @@ export function cli(argv: string[]) {
             return args;
           },
           (argv) => {
+            logger.silly(
+              `Arguments passed down to context: ${JSON.stringify(argv, null)}`
+            );
+
             // Pass down arguments to the context
             config.context.updateOptions({ argv: argv._.slice(1).map(String) });
             config.context.updateArgs(argv);
 
             // Call-out to the profile action implementation
+            logger.silly(`Context: ${JSON.stringify(config.context, null, 2)}`);
             invokeAction(config, actionName)
               .then((_) => {
                 logger.info(`🏋️‍♀️  ${actionName} step completed`);

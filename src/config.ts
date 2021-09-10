@@ -8,7 +8,7 @@ import semver from "semver";
 import { defaultContextForProject } from "./context";
 import { expandParametricConfig } from "./env";
 import { ProjectConfig } from "./struct/ProjectConfig";
-import { RuntimeContext } from "./struct/RuntimeContext";
+import { FrozenRuntimeContext, RuntimeContext } from "./struct/RuntimeContext";
 import loggerBase from "./logger";
 import type { Action } from "./types/Action";
 import type { Preset } from "./types/Preset";
@@ -436,5 +436,16 @@ function getProjectConfig(context: RuntimeContext) {
 
 export function getDefaultProjectConfig() {
   const context = defaultContextForProject(getProjectRoot());
+  return getProjectConfig(context);
+}
+
+export function getThawedProjectConfig(config: FrozenRuntimeContext) {
+  // Recover the run-time environment config
+  if (config.options.logLevel) logger.level = config.options.logLevel;
+  logger.silly(`Thawing frozen configuration: ${config}`);
+
+  // Restore project config and thaw it
+  const context = defaultContextForProject(getProjectRoot());
+  context.thaw(config);
   return getProjectConfig(context);
 }

@@ -10,7 +10,6 @@ import type { RuntimeContext } from "../struct/RuntimeContext";
 
 const fsReadFile = util.promisify(fs.readFile);
 const fsWriteFile = util.promisify(fs.writeFile);
-const fsExists = util.promisify(fs.exists);
 const fsMkdir = util.promisify(fs.mkdir);
 const logger = loggerBase.child({ component: "files" });
 
@@ -48,17 +47,21 @@ export async function getFileContents(
   if ("generator" in file) {
     if (file.mimeType === "application/javascript" && actionName) {
       const modulePath = getEliosModulePath();
+      const frozenContext = ctx.freeze();
       logger.silly(
         `Creating wrapper function for file '${fileName}' -> ` +
-          `${modulePath} invokeFileFunction("${actionName}", "${fileName}")`
+          `${modulePath} invokeFileFunction("${actionName}", "${fileName}", context)`
       );
+      logger.silly(`Freezing context to: ${JSON.stringify(frozenContext)}`);
 
       // When rendering js contents, create a wrapper function
       const contents = [
         `const eilos = require(${JSON.stringify(modulePath)});`,
+        `const context = ${JSON.stringify(frozenContext)};`,
         "module.exports = eilos.invokeFileFunction(",
         `   ${JSON.stringify(actionName)},`,
-        `   ${JSON.stringify(fileName)}`,
+        `   ${JSON.stringify(fileName)},`,
+        `   context`,
         ");",
       ].join("\n");
       return getContentsBuffer(contents);

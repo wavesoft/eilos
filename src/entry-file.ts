@@ -1,15 +1,21 @@
 import fs from "fs";
-import { getDefaultProjectConfig } from "./config";
+import { getThawedProjectConfig } from "./config";
+import { FrozenRuntimeContext } from "./struct/RuntimeContext";
 
 /**
  * Invoke a function described by the `createJsFunctionWrapper`
  *
- * @param {string} actionName - The name of the action where the file belongs
- * @param {string} fileName - The name of the file to generate a function from
+ * @param actionName - The name of the action where the file belongs
+ * @param fileName - The name of the file to generate a function from
+ * @param frozenContext - The frozen context information during the construction of the definition
  * @returns {any} - Returns whatever the function produced
  */
-export function invokeFileFunction(actionName: string, fileName: string) {
-  const project = getDefaultProjectConfig();
+export function invokeFileFunction(
+  actionName: string,
+  fileName: string,
+  frozenContext: FrozenRuntimeContext
+) {
+  const project = getThawedProjectConfig(frozenContext);
 
   // Get the action configuration
   const action = project.getAction(actionName);

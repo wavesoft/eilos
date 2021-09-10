@@ -33,6 +33,16 @@ export interface RuntimeContextUtil {
 }
 
 /**
+ * Holds volatile run-time information that needs to be persisted when creating
+ * a script-proxy file.
+ */
+export interface FrozenRuntimeContext {
+  args: any;
+  env: Record<string, string>;
+  options: RuntimeConfig;
+}
+
+/**
  * Runtime context of eilos, passed around as arguments to build actions
  */
 export class RuntimeContext<
@@ -48,10 +58,10 @@ export class RuntimeContext<
   readonly logger: Logger;
 
   private _args: Args;
-  private _env: Record<string, string>;
+  private _options_files: Record<string, ConfigFile | null>;
+  private _options: Config;
   private _dir: Record<string, string>;
-  private _config: Config;
-  private _config_files: Record<string, ConfigFile | null>;
+  private _env: Record<string, string>;
   private _usedFiles: Set<string>;
 
   constructor(env: Record<string, string>, dir: Record<string, string>) {
@@ -61,11 +71,44 @@ export class RuntimeContext<
     };
     this._env = env;
     this._dir = dir;
-    this._config = {} as Config;
-    this._config_files = {} as Record<string, ConfigFile | null>;
+    this._options = {} as Config;
+    this._options_files = {} as Record<string, ConfigFile | null>;
     this._args = {} as Args;
     this._usedFiles = new Set();
     this.logger = logger;
+  }
+
+  /**
+   * Freeze the dynamic information so they can be restored later
+   */
+  freeze(): FrozenRuntimeContext {
+    return {
+      args: this._args,
+      env: this._env,
+      options: {
+        argv: this._options.argv,
+        debug: this._options.debug,
+        logLevel: this._options.logLevel,
+      },
+    };
+  }
+
+  /**
+   * Thaws the local context by merging the given information
+   * @param context the frozen context info
+   */
+  thaw(frozen: FrozenRuntimeContext) {
+    if (frozen.args) {
+      this.updateArgs(frozen.args);
+    }
+    if (frozen.options) {
+      this.updateOptions(frozen.options as any);
+    }
+    if (frozen.env) {
+      for (const key in frozen.env) {
+        (this._env as any)[key] = frozen.env[key];
+      }
+    }
   }
 
   /**
@@ -135,7 +178,7 @@ export class RuntimeContext<
    * Update run-time configuration
    */
   updateOptions(obj: Partial<Config>): void {
-    this._config = merge(this._config, obj, { arrayMerge: overwriteMerge });
+    this._options = merge(this._options, obj, { arrayMerge: overwriteMerge });
   }
 
   /**
@@ -150,7 +193,7 @@ export class RuntimeContext<
     name: K,
     defaults?: Config[K]
   ): Config[K] | undefined {
-    const value = this._config[name];
+    const value = this._options[name];
     if (typeof value === "object" && value && !Array.isArray(value)) {
       return Object.assign({}, defaults, value);
     } else {
@@ -164,10 +207,10 @@ export class RuntimeContext<
    */
   getConfigFilePath<K extends keyof Files>(name: K): string {
     this._usedFiles.add(name as string);
-    if (this._config_files[name as string] == null) {
+    if (this._options_files[name as string] == null) {
       // Mark this as `null` indicating that there was a request to process
       // that file, but the file was actually missing.
-      this._config_files[name as string] = null;
+      this._options_files[name as string] = null;
     }
     return path.join(this.getDirectory("dist.config"), name.toString());
   }
@@ -178,7 +221,7 @@ export class RuntimeContext<
    */
   getConfigFileDefinition<K extends keyof Files>(name: K): ConfigFile {
     this._usedFiles.add(name as string);
-    const ret = this._config_files[name as string];
+    const ret = this._options_files[name as string];
     if (!ret) {
       throw new TypeError(`Configuration file '${name}' was not defined`);
     }
@@ -210,7 +253,7 @@ export class RuntimeContext<
    * @param contents
    */
   setConfigFile<K extends keyof Files>(name: K, contents: ConfigFile): void {
-    this._config_files[name as string] = contents;
+    this._options_files[name as string] = contents;
   }
 
   /**

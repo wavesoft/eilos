@@ -40,7 +40,7 @@ export async function getFileContents(
 ): Promise<Buffer> {
   // If this is an output file, read it's contents from the disk
   if ("output" in file) {
-    return fsReadFile(fileName);
+    return fsReadFile(ctx.getConfigFilePath(fileName));
   }
 
   // If we have a generator, the contents can either be static or dynamic

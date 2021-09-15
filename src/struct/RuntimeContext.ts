@@ -250,8 +250,7 @@ export class RuntimeContext<
   getConfigFileContents<K extends keyof Files>(name: K): Promise<Buffer> {
     this._usedFiles.add(name as string);
     const fileDef = this.getConfigFileDefinition(name);
-    const fileName = this.getConfigFilePath(name);
-    return getFileContents(this, fileDef, fileName, this._options.action);
+    return getFileContents(this, fileDef, name as string, this._options.action);
   }
 
   /**

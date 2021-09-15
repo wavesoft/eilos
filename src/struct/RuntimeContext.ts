@@ -39,6 +39,7 @@ export interface RuntimeContextUtil {
 export interface FrozenRuntimeContext {
   args: any;
   env: Record<string, string>;
+  filePaths: Record<string, string>;
   options: RuntimeConfig;
 }
 
@@ -58,10 +59,11 @@ export class RuntimeContext<
   readonly logger: Logger;
 
   private _args: Args;
-  private _options_files: Record<string, ConfigFile | null>;
-  private _options: Config;
   private _dir: Record<string, string>;
   private _env: Record<string, string>;
+  private _filePathOverrides: Record<string, string>;
+  private _options_files: Record<string, ConfigFile | null>;
+  private _options: Config;
   private _usedFiles: Set<string>;
 
   constructor(env: Record<string, string>, dir: Record<string, string>) {
@@ -73,6 +75,7 @@ export class RuntimeContext<
     this._dir = dir;
     this._options = {} as Config;
     this._options_files = {} as Record<string, ConfigFile | null>;
+    this._filePathOverrides = {};
     this._args = {} as Args;
     this._usedFiles = new Set();
     this.logger = logger;
@@ -85,6 +88,7 @@ export class RuntimeContext<
     return {
       args: this._args,
       env: this._env,
+      filePaths: this._filePathOverrides,
       options: {
         argv: this._options.argv,
         debug: this._options.debug,
@@ -103,6 +107,9 @@ export class RuntimeContext<
     }
     if (frozen.options) {
       this.updateOptions(frozen.options as any);
+    }
+    if (frozen.filePaths) {
+      this._filePathOverrides = Object.assign({}, frozen.filePaths);
     }
     if (frozen.env) {
       for (const key in frozen.env) {
@@ -212,6 +219,13 @@ export class RuntimeContext<
       // that file, but the file was actually missing.
       this._options_files[name as string] = null;
     }
+
+    // If we have an override, return the overriden path
+    if (name in this._filePathOverrides) {
+      return this._filePathOverrides[name as string];
+    }
+
+    // Otherwise return the intended path location
     return path.join(this.getDirectory("dist.config"), name.toString());
   }
 
@@ -254,6 +268,15 @@ export class RuntimeContext<
    */
   setConfigFile<K extends keyof Files>(name: K, contents: ConfigFile): void {
     this._options_files[name as string] = contents;
+  }
+
+  /**
+   * Change the location of the given configuration file
+   * @param name the name of the file
+   * @param newPath the new path
+   */
+  setConfigFilePath<K extends keyof Files>(name: K, newPath: string): void {
+    this._filePathOverrides[name as string] = newPath;
   }
 
   /**

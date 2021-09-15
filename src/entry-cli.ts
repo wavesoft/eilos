@@ -93,7 +93,10 @@ export function cli(argv: string[]) {
             );
 
             // Pass down arguments to the context
-            config.context.updateOptions({ argv: argv._.slice(1).map(String) });
+            config.context.updateOptions({
+              argv: argv._.slice(1).map(String),
+              action: actionName,
+            });
             config.context.updateArgs(argv);
 
             // Call-out to the profile action implementation

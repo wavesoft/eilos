@@ -17,6 +17,11 @@ export interface RuntimeConfig {
   logLevel: string;
 
   /**
+   * The name of the current action
+   */
+  action: string;
+
+  /**
    * Extra arguments from the command-line
    */
   argv: string[];

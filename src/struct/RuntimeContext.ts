@@ -93,6 +93,7 @@ export class RuntimeContext<
         argv: this._options.argv,
         debug: this._options.debug,
         logLevel: this._options.logLevel,
+        action: this._options.action,
       },
     };
   }
@@ -250,7 +251,7 @@ export class RuntimeContext<
     this._usedFiles.add(name as string);
     const fileDef = this.getConfigFileDefinition(name);
     const fileName = this.getConfigFilePath(name);
-    return getFileContents(this, fileDef, fileName);
+    return getFileContents(this, fileDef, fileName, this._options.action);
   }
 
   /**

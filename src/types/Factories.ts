@@ -6,8 +6,11 @@ import type { PresetConfig } from "./PresetConfig";
 import type { PresetOptions } from "./PresetOption";
 import type { PresetRuntimeConfig } from "./RuntimeConfig";
 
+import loggerBase from "../logger";
 import packageConfig from "../../package.json";
 import { mergeActions, mergeFiles } from "../utils/DefinitionUtil";
+
+const logger = loggerBase.child({ component: "factories" });
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Options Factory
@@ -141,14 +144,62 @@ export function DefinePresetConfig<
 
   // Merge file configuration
   if (cfg.files) {
-    for (const fileName in cfg.files) {
-      // TODO
+    if (!dst.files) dst.files = {} as Files1 & Files2;
+    const dstKeys = Object.keys(dst.files || {});
+    logger.silly(
+      `Combining existing [${dstKeys.join(
+        ","
+      )}] and upstream files [${Object.keys(cfg.files).join(",")}]`
+    );
+    if (dstKeys.length) {
+      for (const fileName in cfg.files) {
+        const newFile = cfg.files[fileName];
+        const prevFile = dst.files[fileName];
+        if (prevFile) {
+          logger.silly(
+            `Combining ${fileName} configurations ${JSON.stringify(
+              prevFile,
+              null,
+              2
+            )} <- ${JSON.stringify(newFile, null, 2)}`
+          );
+          dst.files[fileName] = mergeFiles<Opt1 & Opt2>(
+            fileName,
+            prevFile,
+            newFile
+          ) as any;
+        } else {
+          dst.files[fileName] = newFile as any;
+        }
+      }
+    } else {
+      logger.silly(`Replacing empty configuration files`);
+      dst.files = cfg.files as any;
     }
   }
 
   // Merge option configuration
   if (cfg.options) {
-    // TODO
+    if (!dst.options) dst.options = {} as Opt1 & Opt2;
+    const dstKeys = Object.keys(dst.options || {});
+    if (dstKeys.length) {
+      for (const optName in cfg.options) {
+        const newCfg = cfg.options[optName];
+        const prevCfg = dst.options[optName];
+        if (prevCfg) {
+          if (
+            JSON.stringify(prevCfg.schema) !== JSON.stringify(newCfg.schema)
+          ) {
+            throw new TypeError(
+              `It is not allowed to adjust the schema of the ${optName} option`
+            );
+          }
+        }
+        dst.options[optName] = newCfg as any;
+      }
+    } else {
+      dst.options = cfg.options as any;
+    }
   }
 
   return dst;

@@ -22,7 +22,7 @@ export type ConfigFileGenerator<
   chainContents?: ConfigFileContents
 ) => ConfigFileContents;
 
-export type ConfigFileMergeStrategy = "concat" | "replace";
+export type ConfigFileMergeStrategy = "merge" | "replace";
 
 /**
  * Known configuration file MIME types, that are quite useful when

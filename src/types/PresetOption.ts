@@ -1,5 +1,11 @@
 import type { SomeJTDSchemaType } from "ajv/dist/types/jtd-schema";
 
+type SomeJTDSchemaTypeWithEnum =
+  | SomeJTDSchemaType
+  | {
+      enum: ReadonlyArray<string>;
+    };
+
 /**
  * Definition of a user-configurable option
  */
@@ -30,7 +36,7 @@ export interface PresetOption {
    * If you want to validate different types for the same value (eg. union)
    * you can use an array of different scehmas.
    */
-  schema?: SomeJTDSchemaType | ReadonlyArray<SomeJTDSchemaType>;
+  schema?: SomeJTDSchemaTypeWithEnum | ReadonlyArray<SomeJTDSchemaTypeWithEnum>;
 }
 
 /**

@@ -11,6 +11,9 @@ import type {
 } from "../types/ConfigFile";
 import type { PresetOptions } from "../types/PresetOption";
 import type { PresetRuntimeConfig } from "../types/RuntimeConfig";
+import loggerBase from "../logger";
+
+const logger = loggerBase.child({ component: "files" });
 
 /**
  * Merge strategy for arrays
@@ -61,40 +64,52 @@ export function mergeContents(
   a: ConfigFileContents | undefined,
   b: ConfigFileContents
 ): ConfigFileContents {
+  logger.silly(`${indexKey}: Merging with strategy '${strategy}'`);
+
   if (strategy === "replace" || a == null) {
+    logger.silly(`${indexKey}: Merging with 'replace' strategy to: ${b}`);
     return b;
   }
 
   if (a instanceof Buffer) {
     if (b instanceof Buffer) {
+      logger.silly(`${indexKey}: Merging buffer-buffer data`);
       return Buffer.concat([a, b]);
     } else if (typeof b === "object") {
+      logger.silly(`${indexKey}: Merging buffer-object data`);
       throw new TypeError(
         `Could not combine the contents of '${indexKey}': cannot merge buffer with object`
       );
     } else {
+      logger.silly(`${indexKey}: Merging buffer-string data`);
       return Buffer.concat([a, Buffer.from(b, "utf-8")]);
     }
   } else if (typeof a === "object") {
     if (b instanceof Buffer) {
+      logger.silly(`${indexKey}: Merging object-buffer data`);
       throw new TypeError(
         `Could not combine the contents of '${indexKey}': cannot merge object with buffer`
       );
     } else if (typeof b === "object") {
+      logger.silly(`${indexKey}: Merging object-object data`);
       return mergeObjects(a, b);
     } else {
+      logger.silly(`${indexKey}: Merging object-string data`);
       throw new TypeError(
         `Could not combine the contents of '${indexKey}': cannot merge buffer with object`
       );
     }
   } else {
     if (b instanceof Buffer) {
+      logger.silly(`${indexKey}: Merging string-buffer data`);
       return Buffer.concat([Buffer.from(a, "utf-8"), b]);
     } else if (typeof b === "object") {
+      logger.silly(`${indexKey}: Merging string-object data`);
       throw new TypeError(
         `Could not combine the contents of '${indexKey}': cannot merge string with object`
       );
     } else {
+      logger.silly(`${indexKey}: Merging string-string data`);
       return a + b;
     }
   }
@@ -120,6 +135,7 @@ export function mergeFiles<
     // 'a' is an output file
     if ("output" in b) {
       // 'b' is output file
+      logger.silly(`${indexKey}: Using output-output merge strategy for ${a.mimeType}`);
       return {
         mimeType: mergeMime(strategy, a.mimeType, b.mimeType),
         combine: strategy,
@@ -127,31 +143,40 @@ export function mergeFiles<
       };
     } else if ("generator" in b) {
       // 'b' is a generator
+      logger.silly(`${indexKey}: Using output-generator merge strategy for ${a.mimeType}`);
       throw new TypeError(`Cannot combine output and input files`);
     } else {
       // 'b' holds static contents
+      logger.silly(`${indexKey}: Using output-static merge strategy for ${a.mimeType}`);
       throw new TypeError(`Cannot combine output and input files`);
     }
   } else if ("generator" in a) {
     // 'a' is a generator
     if ("output" in b) {
       // 'b' is output file
+      logger.silly(`${indexKey}: Using generator-output merge strategy for ${a.mimeType}`);
       throw new TypeError(`Cannot combine output and input files`);
     } else if ("generator" in b) {
       // 'b' is a generator
+      logger.silly(`${indexKey}: Using generator-generator merge strategy for ${a.mimeType}`);
       return {
         mimeType: mergeMime(strategy, a.mimeType, b.mimeType),
         generator: (ctx, chain) => {
+          logger.silly(`${indexKey}: Chaining first generator with data='${chain}'`);
           const aV = a.generator(ctx, chain);
+          logger.silly(`${indexKey}: Chaining second generator with data='${aV}'`);
           const bV = b.generator(ctx, aV);
+          logger.silly(`${indexKey}: Passing data='${bV}'`);
           return bV;
         },
       };
     } else {
       // 'b' holds static contents
+      logger.silly(`${indexKey}: Using generator-static merge strategy for ${a.mimeType}`);
       return {
         mimeType: mergeMime(strategy, a.mimeType, b.mimeType),
         generator: (ctx, chain) => {
+          logger.silly(`${indexKey}: Chaining first generator with data='${chain}'`);
           const aV = a.generator(ctx, chain);
           return mergeContents(indexKey, strategy, aV, b.contents);
         },
@@ -161,9 +186,11 @@ export function mergeFiles<
     // 'a' holds static contents
     if ("output" in b) {
       // 'b' is output file
+      logger.silly(`${indexKey}: Using static-output merge strategy for ${a.mimeType}`);
       throw new TypeError(`Cannot combine output and input files`);
     } else if ("generator" in b) {
       // 'b' is a generator
+      logger.silly(`${indexKey}: Using static-generator merge strategy for ${a.mimeType}`);
       return {
         mimeType: mergeMime(strategy, a.mimeType, b.mimeType),
         generator: (ctx, chain) => {
@@ -173,6 +200,7 @@ export function mergeFiles<
       };
     } else {
       // 'b' holds static contents
+      logger.silly(`${indexKey}: Using static-static merge strategy for ${a.mimeType}`);
       return {
         mimeType: mergeMime(strategy, a.mimeType, b.mimeType),
         contents: mergeContents(indexKey, strategy, a.contents, b.contents),

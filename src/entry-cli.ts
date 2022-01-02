@@ -19,6 +19,8 @@ export function cli(argv: string[]) {
       }
     }
 
+    logger.silly(`Running eilos from ${__filename}`)
+
     // Load project configuration
     const config = getDefaultProjectConfig();
     if (useDebug || useVerboseDebug) {

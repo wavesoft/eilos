@@ -133,4 +133,4 @@ It holds the specifications for a particular configuration file. Since there are
 
 2. The file definitions should be combine-able, since a preset might extend another preset. For this reason, each configuration file must be defined with a required `mimeType` property, and an optional `combine` strategy. Based on this information the system either combines the output of the different configurations, or it makes the most recent replace the previous.
 
-For reference, the logic for combining the different configuration contents can be found in the `mergeContents` function in `config.ts`.
+For reference, the logic for combining the different configuration contents can be found in the `mergeContents` function in `DefinitionUtil.ts`.

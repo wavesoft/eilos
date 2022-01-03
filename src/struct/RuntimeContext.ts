@@ -40,6 +40,7 @@ export interface FrozenRuntimeContext {
   args: any;
   env: Record<string, string>;
   filePaths: Record<string, string>;
+  dirs: Record<string, string>;
   options: RuntimeConfig;
 }
 
@@ -89,6 +90,7 @@ export class RuntimeContext<
       args: this._args,
       env: this._env,
       filePaths: this._filePathOverrides,
+      dirs: this._dir,
       options: {
         argv: this._options.argv,
         debug: this._options.debug,
@@ -115,6 +117,11 @@ export class RuntimeContext<
     if (frozen.env) {
       for (const key in frozen.env) {
         (this._env as any)[key] = frozen.env[key];
+      }
+    }
+    if (frozen.dirs) {
+      for (const key in frozen.dirs) {
+        (this._dir as any)[key] = frozen.dirs[key];
       }
     }
   }
@@ -294,7 +301,7 @@ export class RuntimeContext<
    * @param searchIn optional directory to search in (defaults to cwd)
    */
   resolvePackagePath(name: string, searchIn?: string) {
-    return config.resolvePackagePath(name, searchIn);
+    return config.resolvePackagePath(name, searchIn || this.getDirectory("project"));
   }
 
   /**
@@ -305,6 +312,10 @@ export class RuntimeContext<
     return __non_webpack_require__.resolve(name, {
       paths: [path.join(this.getDirectory("project"), "node_modules")],
     });
+  }
+
+  getPackageConfigPath() {
+    return path.join(this.getDirectory("project"), "package.json");
   }
 
   /**

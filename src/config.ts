@@ -19,9 +19,7 @@ import packageConfig from "../package.json";
 
 const logger = loggerBase.child({ component: "config" });
 
-const PATH_PKGCONF = "package.json";
 const PATH_USER = ".eilos.js";
-const PATH_BUILD = "build";
 const PATH_NODE_MODULES = "node_modules";
 const PRESET_PREFIX = "eilos-preset-";
 
@@ -45,33 +43,6 @@ function getProjectRoot(): string {
     throw new Error(`Could not find 'package.json' in the current directory!`);
   }
   return path.dirname(pkgPath);
-}
-
-/**
- * Gets the path to user's package.json file
- *
- * @returns {string}
- */
-function getPackageConfigPath(): string {
-  return path.join(getProjectRoot(), PATH_PKGCONF);
-}
-
-/**
- * Gets the `node_modules` directory position
- *
- * @returns {string}
- */
-function getModulesPath(): string {
-  return path.join(getProjectRoot(), PATH_NODE_MODULES);
-}
-
-/**
- * Gets the build directory location
- *
- * @returns {string}
- */
-function getBuildPath(): string {
-  return path.join(getProjectRoot(), PATH_BUILD);
 }
 
 /**
@@ -104,9 +75,13 @@ function getUserConfigFrom(path: string): SomeUserConfig | null {
  *
  * @returns {Object}
  */
-function getUserConfigFromEilosFile(): SomeUserConfig | null {
-  const foundJson = findUp(".eilos.json", {});
-  const foundJs = findUp(".eilos.js", {});
+function getUserConfigFromEilosFile(
+  context: RuntimeContext
+): SomeUserConfig | null {
+  const foundJson = findUp(".eilos.json", {
+    cwd: context.getDirectory("project"),
+  });
+  const foundJs = findUp(".eilos.js", { cwd: context.getDirectory("project") });
   const userFile = foundJson || foundJs;
 
   logger.silly(`Found .eilos.json at ${foundJson}`);
@@ -136,8 +111,11 @@ function getUserConfigFromPackage(packageJson: any): SomeUserConfig | null {
  * - The user's `package.json`
  * - The selected preset
  */
-function getUserConfig(packageJson: any): SomeUserConfig {
-  const userFile = getUserConfigFromEilosFile();
+function getUserConfig(
+  packageJson: any,
+  context: RuntimeContext
+): SomeUserConfig {
+  const userFile = getUserConfigFromEilosFile(context);
   const userJson = getUserConfigFromPackage(packageJson);
 
   // Validate that no many configuration locations are used
@@ -224,8 +202,11 @@ function getPresetName(userConfig: SomeUserConfig, packageJson: any): string {
 /**
  * Load the preset configuration from the given package name
  */
-function loadPresetFromPackage(presetName: string): Preset {
-  const pkgPath = resolvePackagePath(presetName);
+function loadPresetFromPackage(
+  presetName: string,
+  context: RuntimeContext
+): Preset {
+  const pkgPath = context.resolvePackagePath(presetName);
   logger.silly(`Resolved preset package at ${pkgPath}`);
 
   const presetPkg = __non_webpack_require__(path.join(pkgPath, "package.json"));
@@ -379,12 +360,12 @@ function validateOptions(preset: Preset, config: SomeRuntimeConfig) {
 function getProjectConfig(context: RuntimeContext) {
   // Load the project's 'package.json' that we are using
   // for various different purposes.
-  const packageJsonPath = getPackageConfigPath();
+  const packageJsonPath = context.getPackageConfigPath();
   const packageJson = __non_webpack_require__(packageJsonPath);
   logger.debug(`Found project config at '${packageJsonPath}'`);
 
   // Then load the user config from the relevant sources
-  const userConfigBase = getUserConfig(packageJson);
+  const userConfigBase = getUserConfig(packageJson, context);
   const userConfig = expandParametricConfig(userConfigBase, context);
   logger.silly(
     `Discovered user config: ${JSON.stringify(userConfig, null, 2)}`
@@ -392,8 +373,8 @@ function getProjectConfig(context: RuntimeContext) {
 
   // Figure out which preset to use and load it from file
   const presetName = getPresetName(userConfig, packageJson);
-  const packagePreset = loadPresetFromPackage(presetName);
   logger.debug(`Using preset '${presetName}'`);
+  const packagePreset = loadPresetFromPackage(presetName, context);
 
   // Include custom actions int he preset
   const preset = composePreset(packagePreset, userConfig);

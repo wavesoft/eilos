@@ -190,6 +190,19 @@ export class RuntimeContext<
   }
 
   /**
+   * Computes an absolute path to a file that resides in the given directory
+   *
+   * @param alias the alias of the directory
+   * @param file the file to compute
+   */
+  getAbsolutePathFromDirectory(alias: string, file: string): string {
+    if (file.startsWith("/")) return file;
+    const baseDir = this.getDirectory(alias);
+    if (file.startsWith("./")) file = file.substring(2);
+    return path.join(baseDir, file);
+  }
+
+  /**
    * Update run-time configuration
    */
   updateOptions(obj: Partial<Config>): void {
@@ -301,7 +314,10 @@ export class RuntimeContext<
    * @param searchIn optional directory to search in (defaults to cwd)
    */
   resolvePackagePath(name: string, searchIn?: string) {
-    return config.resolvePackagePath(name, searchIn || this.getDirectory("project"));
+    return config.resolvePackagePath(
+      name,
+      searchIn || this.getDirectory("project")
+    );
   }
 
   /**
@@ -314,6 +330,9 @@ export class RuntimeContext<
     });
   }
 
+  /**
+   * Returns the path to package.json file of the project
+   */
   getPackageConfigPath() {
     return path.join(this.getDirectory("project"), "package.json");
   }

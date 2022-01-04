@@ -160,12 +160,16 @@ export function mergeFiles<
       throw new TypeError(`Cannot combine output and input files`);
     }
   } else if ("generator" in a) {
+    const aGenerator = a.generator;
+
     // 'a' is a generator
     if ("output" in b) {
       // 'b' is output file
       logger.silly(`- Using generator-output merge strategy`);
       throw new TypeError(`Cannot combine output and input files`);
     } else if ("generator" in b) {
+      const bGenerator = b.generator;
+
       // 'b' is a generator
       logger.silly(`- Using generator-generator merge strategy`);
       const mimeType = mergeMime(strategy, a.mimeType, b.mimeType);
@@ -176,11 +180,11 @@ export function mergeFiles<
         generator: (ctx, chain) => {
           logger.silly(`Running generator-generator merger for '${indexKey}'`);
           logger.silly(`- chain: ${JSON.stringify(chain, null, 2)}`);
-          logger.silly(`- generator source a: ${a.generator.toString()}`);
-          const aV = a.generator(ctx, chain);
+          logger.silly(`- generator source a: ${aGenerator.toString()}`);
+          const aV = aGenerator(ctx, chain);
           logger.silly(`- generator a: ${JSON.stringify(aV, null, 2)}`);
-          logger.silly(`- generator source b: ${b.generator.toString()}`);
-          const bV = b.generator(ctx, aV);
+          logger.silly(`- generator source b: ${bGenerator.toString()}`);
+          const bV = bGenerator(ctx, aV);
           logger.silly(`- generator b (result): ${JSON.stringify(bV, null, 2)}`);
           return bV;
         },
@@ -195,8 +199,8 @@ export function mergeFiles<
         generator: (ctx, chain) => {
           logger.silly(`Running generator-static merger for '${indexKey}'`);
           logger.silly(`- chain: ${JSON.stringify(chain, null, 2)}`);
-          logger.silly(`- generator source a: ${a.generator.toString()}`);
-          const aV = a.generator(ctx, chain);
+          logger.silly(`- generator source a: ${aGenerator.toString()}`);
+          const aV = aGenerator(ctx, chain);
           logger.silly(`- generator a: ${JSON.stringify(aV, null, 2)}`);
           logger.silly(`- static data: ${JSON.stringify(b.contents, null, 2)}`);
           const bV = mergeContents(indexKey, strategy, aV, b.contents);
@@ -212,6 +216,8 @@ export function mergeFiles<
       logger.silly(`- Using static-output merge strategy (invalid)`);
       throw new TypeError(`Cannot combine output and input files`);
     } else if ("generator" in b) {
+      const bGenerator = b.generator;
+
       // 'b' is a generator
       logger.silly(`- Using static-generator merge strategy`);
       const mimeType = mergeMime(strategy, a.mimeType, b.mimeType);
@@ -223,8 +229,8 @@ export function mergeFiles<
           logger.silly(`- chain: ${JSON.stringify(chain, null, 2)}`);
           const aV = mergeContents(indexKey, strategy, chain || "", a.contents);
           logger.silly(`- static data: ${JSON.stringify(aV, null, 2)}`);
-          logger.silly(`- generator source b: ${b.generator.toString()}`);
-          const bV = b.generator(ctx, aV);
+          logger.silly(`- generator source b: ${bGenerator.toString()}`);
+          const bV = bGenerator(ctx, aV);
           logger.silly(
             `- generator b (result): ${JSON.stringify(bV, null, 2)}`
           );

@@ -64,52 +64,51 @@ export function mergeContents(
   a: ConfigFileContents | undefined,
   b: ConfigFileContents
 ): ConfigFileContents {
-  logger.silly(`${indexKey}: Merging with strategy '${strategy}'`);
-
+  logger.silly(`-- Merging with strategy '${strategy}'`);
   if (strategy === "replace" || a == null) {
-    logger.silly(`${indexKey}: Merging with 'replace' strategy to: ${b}`);
+    logger.silly(`--- Replacing contents`);
     return b;
   }
 
   if (a instanceof Buffer) {
     if (b instanceof Buffer) {
-      logger.silly(`${indexKey}: Merging buffer-buffer data`);
+      logger.silly(`--- Merging buffer-buffer (concat)`);
       return Buffer.concat([a, b]);
     } else if (typeof b === "object") {
-      logger.silly(`${indexKey}: Merging buffer-object data`);
+      logger.silly(`--- Merging buffer-object (invalid)`);
       throw new TypeError(
         `Could not combine the contents of '${indexKey}': cannot merge buffer with object`
       );
     } else {
-      logger.silly(`${indexKey}: Merging buffer-string data`);
+      logger.silly(`--- Merging buffer-string (concat)`);
       return Buffer.concat([a, Buffer.from(b, "utf-8")]);
     }
   } else if (typeof a === "object") {
     if (b instanceof Buffer) {
-      logger.silly(`${indexKey}: Merging object-buffer data`);
+      logger.silly(`--- Merging object-buffer (invalid)`);
       throw new TypeError(
         `Could not combine the contents of '${indexKey}': cannot merge object with buffer`
       );
     } else if (typeof b === "object") {
-      logger.silly(`${indexKey}: Merging object-object data`);
-      return mergeObjects(a, b);
+      logger.silly(`--- Merging object-object (object-merge)`);
+      return mergeObjects({}, a, b);
     } else {
-      logger.silly(`${indexKey}: Merging object-string data`);
+      logger.silly(`--- Merging object-string (invalid)`);
       throw new TypeError(
         `Could not combine the contents of '${indexKey}': cannot merge buffer with object`
       );
     }
   } else {
     if (b instanceof Buffer) {
-      logger.silly(`${indexKey}: Merging string-buffer data`);
+      logger.silly(`--- Merging buffer-string (concat)`);
       return Buffer.concat([Buffer.from(a, "utf-8"), b]);
     } else if (typeof b === "object") {
-      logger.silly(`${indexKey}: Merging string-object data`);
+      logger.silly(`--- Merging object-string (invalid)`);
       throw new TypeError(
         `Could not combine the contents of '${indexKey}': cannot merge string with object`
       );
     } else {
-      logger.silly(`${indexKey}: Merging string-string data`);
+      logger.silly(`--- Merging string-string (concat)`);
       return a + b;
     }
   }
@@ -131,11 +130,21 @@ export function mergeFiles<
 ): ConfigFile<PresetRuntimeConfig<Opts>, ArgumentsType<Args>> {
   const strategy: ConfigFileMergeStrategy = b.combine || "replace";
 
+  logger.silly(`Merging '${indexKey}' with two configuration:`);
+  logger.silly(`- a: ${JSON.stringify(a, null, 2)}`);
+  if ("generator" in a) {
+    logger.silly(`- generator source a: ${a.generator.toString()}`);
+  }
+  logger.silly(`- b: ${JSON.stringify(b, null, 2)}`);
+  if ("generator" in b) {
+    logger.silly(`- generator source b: ${b.generator.toString()}`);
+  }
+
   if ("output" in a) {
     // 'a' is an output file
     if ("output" in b) {
       // 'b' is output file
-      logger.silly(`${indexKey}: Using output-output merge strategy for ${a.mimeType}`);
+      logger.silly(`- Using output-output merge strategy`);
       return {
         mimeType: mergeMime(strategy, a.mimeType, b.mimeType),
         combine: strategy,
@@ -143,42 +152,56 @@ export function mergeFiles<
       };
     } else if ("generator" in b) {
       // 'b' is a generator
-      logger.silly(`${indexKey}: Using output-generator merge strategy for ${a.mimeType}`);
+      logger.silly(`- Using output-generator merge strategy (invalid)`);
       throw new TypeError(`Cannot combine output and input files`);
     } else {
       // 'b' holds static contents
-      logger.silly(`${indexKey}: Using output-static merge strategy for ${a.mimeType}`);
+      logger.silly(`- Using output-static merge strategy (invalid)`);
       throw new TypeError(`Cannot combine output and input files`);
     }
   } else if ("generator" in a) {
     // 'a' is a generator
     if ("output" in b) {
       // 'b' is output file
-      logger.silly(`${indexKey}: Using generator-output merge strategy for ${a.mimeType}`);
+      logger.silly(`- Using generator-output merge strategy`);
       throw new TypeError(`Cannot combine output and input files`);
     } else if ("generator" in b) {
       // 'b' is a generator
-      logger.silly(`${indexKey}: Using generator-generator merge strategy for ${a.mimeType}`);
+      logger.silly(`- Using generator-generator merge strategy`);
+      const mimeType = mergeMime(strategy, a.mimeType, b.mimeType);
+      logger.silly(`- mimeType: ${mimeType}`);
+
       return {
-        mimeType: mergeMime(strategy, a.mimeType, b.mimeType),
+        mimeType,
         generator: (ctx, chain) => {
-          logger.silly(`${indexKey}: Chaining first generator with data='${chain}'`);
+          logger.silly(`Running generator-generator merger for '${indexKey}'`);
+          logger.silly(`- chain: ${JSON.stringify(chain, null, 2)}`);
+          logger.silly(`- generator source a: ${a.generator.toString()}`);
           const aV = a.generator(ctx, chain);
-          logger.silly(`${indexKey}: Chaining second generator with data='${aV}'`);
+          logger.silly(`- generator a: ${JSON.stringify(aV, null, 2)}`);
+          logger.silly(`- generator source b: ${b.generator.toString()}`);
           const bV = b.generator(ctx, aV);
-          logger.silly(`${indexKey}: Passing data='${bV}'`);
+          logger.silly(`- generator b (result): ${JSON.stringify(bV, null, 2)}`);
           return bV;
         },
       };
     } else {
       // 'b' holds static contents
-      logger.silly(`${indexKey}: Using generator-static merge strategy for ${a.mimeType}`);
+      logger.silly(`- Using generator-static merge strategy`);
+      const mimeType = mergeMime(strategy, a.mimeType, b.mimeType);
+      logger.silly(`- mimeType: ${mimeType}`);
       return {
-        mimeType: mergeMime(strategy, a.mimeType, b.mimeType),
+        mimeType,
         generator: (ctx, chain) => {
-          logger.silly(`${indexKey}: Chaining first generator with data='${chain}'`);
+          logger.silly(`Running generator-static merger for '${indexKey}'`);
+          logger.silly(`- chain: ${JSON.stringify(chain, null, 2)}`);
+          logger.silly(`- generator source a: ${a.generator.toString()}`);
           const aV = a.generator(ctx, chain);
-          return mergeContents(indexKey, strategy, aV, b.contents);
+          logger.silly(`- generator a: ${JSON.stringify(aV, null, 2)}`);
+          logger.silly(`- static data: ${JSON.stringify(b.contents, null, 2)}`);
+          const bV = mergeContents(indexKey, strategy, aV, b.contents);
+          logger.silly(`- result: ${JSON.stringify(bV, null, 2)}`);
+          return bV;
         },
       };
     }
@@ -186,24 +209,46 @@ export function mergeFiles<
     // 'a' holds static contents
     if ("output" in b) {
       // 'b' is output file
-      logger.silly(`${indexKey}: Using static-output merge strategy for ${a.mimeType}`);
+      logger.silly(`- Using static-output merge strategy (invalid)`);
       throw new TypeError(`Cannot combine output and input files`);
     } else if ("generator" in b) {
       // 'b' is a generator
-      logger.silly(`${indexKey}: Using static-generator merge strategy for ${a.mimeType}`);
+      logger.silly(`- Using static-generator merge strategy`);
+      const mimeType = mergeMime(strategy, a.mimeType, b.mimeType);
+      logger.silly(`- mimeType: ${mimeType}`);
       return {
         mimeType: mergeMime(strategy, a.mimeType, b.mimeType),
         generator: (ctx, chain) => {
+          logger.silly(`Running static-generator merger for '${indexKey}'`);
+          logger.silly(`- chain: ${JSON.stringify(chain, null, 2)}`);
           const aV = mergeContents(indexKey, strategy, chain || "", a.contents);
-          return b.generator(ctx, aV);
+          logger.silly(`- static data: ${JSON.stringify(aV, null, 2)}`);
+          logger.silly(`- generator source b: ${b.generator.toString()}`);
+          const bV = b.generator(ctx, aV);
+          logger.silly(
+            `- generator b (result): ${JSON.stringify(bV, null, 2)}`
+          );
+          return bV;
         },
       };
     } else {
       // 'b' holds static contents
-      logger.silly(`${indexKey}: Using static-static merge strategy for ${a.mimeType}`);
+      logger.silly(`- Using static-static merge strategy`);
+      const contents = mergeContents(
+        indexKey,
+        strategy,
+        a.contents,
+        b.contents
+      );
+      const mimeType = mergeMime(strategy, a.mimeType, b.mimeType);
+      logger.silly(`- mimeType: ${mimeType}`);
+      logger.silly(`- contents a: ${JSON.stringify(a.contents, null, 2)}`);
+      logger.silly(`- contents b: ${JSON.stringify(b.contents, null, 2)}`);
+      logger.silly(`- result: ${JSON.stringify(contents, null, 2)}`);
+
       return {
-        mimeType: mergeMime(strategy, a.mimeType, b.mimeType),
-        contents: mergeContents(indexKey, strategy, a.contents, b.contents),
+        mimeType,
+        contents,
       };
     }
   }
